@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; 
 
 const drumRollSound = new Audio("/drum.mp3");
 
-function Matching() {
+function Matching({ onBack }) { 
   const [topic, setTopic] = useState("");
   const [names, setNames] = useState(["", "", "", ""]);
   const [results, setResults] = useState([]);
@@ -64,7 +64,7 @@ function Matching() {
     > 
       <div className="absolute inset-0 bg-black/30 pointer-events-none"></div>
       <main className="w-full z-10 max-w-2xl bg-white rounded-3xl shadow-xl p-8 overflow-hidden mt-10">
-        <h1 className="mb-10 mt-3 text-center text-5xl font-extrabold text-slate-800 font-jalnan">이빨괴물들의 토론</h1>
+        <h1 className="mb-5 text-center text-5xl font-extrabold text-slate-800 font-jalnan">이빨괴물들의 토론</h1>
         {!showResults ? (
           /* --- 1단계: 입력 화면 --- */
           <>
@@ -109,7 +109,7 @@ function Matching() {
           </>
         ) : (
           /* --- 2단계: 결과 및 애니메이션 화면 --- */
-          <div className="text-center py-6">
+          <div className="text-center">
             {isSpinning ? (
               <div className="flex flex-col items-center justify-center space-y-6 py-10">
                 <div className="w-20 h-20 border-8 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
@@ -117,7 +117,7 @@ function Matching() {
               </div>
             ) : (
               <div className="animate-in fade-in zoom-in duration-500">
-                <h2 className="text-lg font-bold text-slate-400 mb-2">다음주 토론 주제</h2>
+                {/* <h2 className="text-lg font-bold text-slate-400 mb-2">다음주 토론 주제</h2> */}
                 <h3 className="text-3xl font-bold text-purple-600 mb-8 px-4 font-jalnan">{topic}</h3>
                 
                 <div className="space-y-4">
@@ -137,6 +137,19 @@ function Matching() {
                     </div>
                   ))}
                 </div>
+                <div className="mt-10 space-y-3">
+                  <button 
+                    onClick={onBack} // 2. navigate('/') 대신 onBack을 실행!
+                    className="w-full py-5 bg-gradient-to-r from-slate-700 to-slate-900 text-white rounded-2xl text-2xl font-black hover:from-black hover:to-black transition-all shadow-xl font-jalnan flex items-center justify-center gap-2 cursor-pointer"
+                    style={{ position: 'relative', zIndex: 50 }} // 혹시 덮개에 가려졌을까 봐 추가!
+                  >
+                    🏠 메인 화면으로 가기
+                  </button>
+                  <p className="text-slate-400 text-sm">
+                    결과가 자동으로 저장되었습니다! 토론방에서 불러올 수 있어요.
+                  </p>
+                </div>
+
               </div>
             )}
           </div>
