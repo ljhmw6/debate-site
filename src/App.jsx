@@ -24,7 +24,7 @@ function App() {
             
             {/* 📱 타이틀: 모바일에선 4xl, PC에선 6xl */}
             <h1 className="text-3xl md:text-6xl font-black text-slate-800 font-jalnan mb-4 md:mb-8 leading-tight">
-              이빨괴물들의 토론 🎤
+              이빨괴물들의 토론
             </h1>
             
             <p className="text-slate-500 mb-8 md:mb-12 font-medium text-sm md:text-lg">

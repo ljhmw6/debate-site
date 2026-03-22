@@ -153,7 +153,7 @@ function DebateRoom({ onBack }) {
                 )}
               </div>              
               {/* 📱 모바일에선 1열, PC에선 2열 */}
-              <div className="grid grid-cols-2 gap-3 md:gap-x-10 md:gap-y-2 md:max-h-none overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-10 md:gap-y-2 md:max-h-none overflow-y-auto pr-1">
                 {participants.map((p, i) => (
                   <div key={i} className={`p-3 rounded-xl border-2 flex items-center gap-2 md:gap-3 bg-white ${p.team.includes('찬성') ? 'border-blue-100' : 'border-red-100'}`}>
                     <span className={`w-8 h-6 md:w-11 md:h-8 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm shrink-0 ${p.color}`}>{p.turn}</span>
@@ -191,8 +191,8 @@ function DebateRoom({ onBack }) {
   if (step === 'intro') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 md:p-10 text-center space-y-6 md:space-y-10 bg-white overflow-y-auto">
-        <h1 className="text-2xl md:text-4xl text-slate-500 font-jalnan">오늘의 주제
-            <p className="text-purple-600 text-2xl md:text-3xl mt-2 font-black break-keep px-4">{topic}</p>
+        <h1 className="text-xl md:text-4xl text-slate-500 font-jalnan">오늘의 주제
+            <p className="text-purple-600 text-lg md:text-3xl mt-2 font-black break-keep px-4">{topic}</p>
         </h1>
         <div className="bg-slate-50 p-6 md:p-10 rounded-3xl border-2 border-slate-100 text-left w-full max-w-3xl relative">
           <h3 className="text-xl md:text-3xl font-bold mb-4 md:mb-6 text-slate-800 font-jalnan">토론 시 주의 사항</h3>
@@ -231,10 +231,10 @@ function DebateRoom({ onBack }) {
     return (
       <div className="h-screen flex flex-col items-center justify-center py-10 px-6 text-center bg-white overflow-hidden relative">
         <div className="space-y-4 md:space-y-6 z-10 w-full"> 
-          <p className="text-purple-600 text-2sm md:text-2xl font-black font-jalnan opacity-70">{topic}</p>
-          <h2 className={`text-4xl md:text-5xl font-jalnan font-black transition-colors ${isChan ? "text-blue-600" : "text-red-600"}`}>
+          <p className="text-purple-600 text-sm md:text-2xl font-black font-jalnan opacity-70">{topic}</p>
+          <h2 className={`text-3xl md:text-5xl font-jalnan font-black transition-colors ${isChan ? "text-blue-600" : "text-red-600"}`}>
             {isChan ? "찬성측" : "반대측"} <span className="text-green-600">{currentP?.name}</span> 
-            <div className="text-5xl md:text-7xl mt-2 md:mt-5 text-slate-600">
+            <div className="text-4xl md:text-7xl mt-2 md:mt-5 text-slate-600">
               {roundNames[round]}
             </div>
           </h2> 
@@ -264,7 +264,7 @@ function DebateRoom({ onBack }) {
 
         <div className="w-full max-w-6xl px-4"> 
           {round === 2 && isLastSpeakerOfRound ? (
-            <p className="text-2xl md:text-3xl text-orange-600 font-black animate-bounce font-jalnan">마무리할 시간이에요! ✨</p>
+            <p className="text-2xl md:text-3xl text-orange-600 font-black animate-bounce font-jalnan mt-5">마무리할 시간이에요! ✨</p>
           ) : ( 
             <p className="text-lg md:text-2xl text-slate-600 font-bold leading-snug">
             다음 순서는 
