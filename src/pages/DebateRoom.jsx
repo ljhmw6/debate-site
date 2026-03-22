@@ -9,10 +9,15 @@ const speak = (text) => {
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "ko-KR"; // 한국어 설정
-    utterance.rate = 1.0;     // 속도 (0.1 ~ 10)
-    utterance.pitch = 1.0;    // 음높이 (0 ~ 2)
+    utterance.lang = "ko-KR";
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
 
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      const koVoice = voices.find(v => v.lang === 'ko-KR' || v.lang === 'ko_KR');
+      if (koVoice) utterance.voice = koVoice;
+    }
     window.speechSynthesis.speak(utterance);
   }
 };
@@ -192,6 +197,17 @@ function DebateRoom({ onBack }) {
   };
 
   const startDebate = () => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      const wakeup = new SpeechSynthesisUtterance(" "); 
+      window.speechSynthesis.speak(wakeup);
+    }
+    if (applauseSound) {
+      applauseSound.play().then(() => {
+        applauseSound.pause();
+        applauseSound.currentTime = 0;
+      }).catch(() => {});
+    }
+
     setDebateTime(timeLeft);  
     setStep('intro');
   };
