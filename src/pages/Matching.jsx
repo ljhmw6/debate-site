@@ -2,6 +2,19 @@ import React, { useState, useEffect } from 'react';
 
 const drumRollSound = new Audio("/drum.mp3");
 
+const speak = (text) => {
+  if (typeof window !== "undefined" && window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "ko-KR"; // 한국어 설정
+    utterance.rate = 1.0;     // 속도 (0.1 ~ 10)
+    utterance.pitch = 1.0;    // 음높이 (0 ~ 2)
+
+    window.speechSynthesis.speak(utterance);
+  }
+};
+
 function Matching({ onBack, onStartDebate }) { 
   const [topic, setTopic] = useState("");
   const [topicList, setTopicList] = useState([]);
@@ -9,6 +22,15 @@ function Matching({ onBack, onStartDebate }) {
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
+
+  // 컴포넌트가 사라질 때(Unmount) 음성 끄기
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     fetch('/topics.json')
@@ -50,6 +72,8 @@ function Matching({ onBack, onStartDebate }) {
 
     setTimeout(() => {
       drumRollSound.currentTime = 5.1;
+
+      speak(`토론팀이 정해졌습니다. 찬성팀과 반대팀을 확인하세요`);
 
       const positions = names.map((_, i) => ({
         turn: i + 1,
@@ -138,6 +162,7 @@ function Matching({ onBack, onStartDebate }) {
                     type="text"
                     className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-300 outline-none text-base md:text-lg"
                     placeholder={`친구 ${i + 1}`}
+                    maxLength={9}
                     value={name}
                     onChange={(e) => handleNameChange(i, e.target.value)}
                   />
@@ -169,9 +194,9 @@ function Matching({ onBack, onStartDebate }) {
                 <h3 className="text-lg md:text-2xl font-bold text-purple-600 mb-6 md:mb-8 px-4 leading-tight">{topic} </h3>
                 
                 {/* 📱 결과 리스트: 모바일에선 세로로 1팀씩, PC에선 가로로 2팀 */}
-                <div className="grid grid-cols-2 gap-x-4 md:gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 md:gap-8">
                   {/* 찬성 팀 */}
-                  <div className="space-y-3 md:space-y-4">
+                  <div className="space-y-3 md:space-y-4 mb-5 md:mb-0">
                     <div className="text-center py-2 bg-blue-500 text-white rounded-xl font-jalnan shadow-md mb-2 md:mb-4 text-lg md:text-2xl">
                       찬성 팀
                     </div>
