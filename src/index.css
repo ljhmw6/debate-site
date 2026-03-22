@@ -14,9 +14,14 @@
   font-family: 'Noto Sans KR', sans-serif !important; 
 }
 
+button{ cursor: pointer;}
+
 body {
   font-family: 'Noto Sans KR', sans-serif !important; 
-  background-color: #f8fafc; 
+  background-color: #f8fafc;   
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  word-break: keep-all; /* 단어 단위 줄바꿈 기본 적용 */
 }
  
 .font-jalnan {
