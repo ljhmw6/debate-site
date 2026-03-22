@@ -3,20 +3,26 @@ import React, { useState, useEffect } from 'react';
 const drumRollSound = new Audio("/drum.mp3");
 
 const speak = (text) => {
-  if (typeof window !== "undefined" && window.speechSynthesis) {
+  if (typeof window !== "undefined" && window.speechSynthesis) { 
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "ko-KR";
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
-
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
+ 
+    const setVoiceAndSpeak = () => {
+      const voices = window.speechSynthesis.getVoices();
       const koVoice = voices.find(v => v.lang === 'ko-KR' || v.lang === 'ko_KR');
       if (koVoice) utterance.voice = koVoice;
+      window.speechSynthesis.speak(utterance);
+    };
+ 
+    if (window.speechSynthesis.getVoices().length > 0) {
+      setVoiceAndSpeak();
+    } else {
+      window.speechSynthesis.onvoiceschanged = setVoiceAndSpeak;
     }
-    window.speechSynthesis.speak(utterance);
   }
 };
 
@@ -69,6 +75,12 @@ function Matching({ onBack, onStartDebate }) {
   };
 
   const runLadder = () => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const knock = new SpeechSynthesisUtterance(""); 
+      window.speechSynthesis.speak(knock);
+    }
+
     drumRollSound.currentTime = 0; 
     drumRollSound.play().catch(e => console.log("재생 실패:", e));
     

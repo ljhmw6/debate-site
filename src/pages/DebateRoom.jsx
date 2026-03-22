@@ -5,20 +5,26 @@ const alertSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_s
 const applauseSound = typeof Audio !== "undefined" ? new Audio("/applause.mp3") : null;
 
 const speak = (text) => {
-  if (typeof window !== "undefined" && window.speechSynthesis) {
+  if (typeof window !== "undefined" && window.speechSynthesis) { 
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "ko-KR";
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
-
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
+ 
+    const setVoiceAndSpeak = () => {
+      const voices = window.speechSynthesis.getVoices();
       const koVoice = voices.find(v => v.lang === 'ko-KR' || v.lang === 'ko_KR');
       if (koVoice) utterance.voice = koVoice;
+      window.speechSynthesis.speak(utterance);
+    };
+ 
+    if (window.speechSynthesis.getVoices().length > 0) {
+      setVoiceAndSpeak();
+    } else {
+      window.speechSynthesis.onvoiceschanged = setVoiceAndSpeak;
     }
-    window.speechSynthesis.speak(utterance);
   }
 };
 
@@ -311,9 +317,10 @@ function DebateRoom({ onBack }) {
           <ul className="space-y-3 md:space-y-4 text-base md:text-xl text-slate-700 font-medium list-disc ml-4 md:ml-6">            
             <li>토론 시에는 차분하고 예의 있는 존댓말로 말해주세요.</li>
             <li>상대방의 의견을 무시하거나 비방하는 말은 자제해주세요.</li>
-            <li>각 나의 주장 <span className="text-blue-600 font-bold">{timeString}</span>, 궁금한점&반론 <span className="text-blue-600 font-bold">{timeString}</span>, 최종 정리 <span className="text-blue-600 font-bold">{timeString}</span>씩 주어집니다.</li>
+            <li>각 나의 주장 <span className="text-blue-600 font-bold">{timeString}</span>, 궁금한점&반론 <span className="text-blue-600 font-bold">{timeString}</span>, 최종 정리 <span className="text-blue-600 font-bold">
+            {timeString}</span>씩 주어집니다.</li>
             <li>내 순서가 아니더라도 화면을 보며 친구의 의견에 반응해 주세요.</li>
-            <li>3분이 지나면 타이머가 울리고 다음 친구에게 차례가 넘어갑니다.</li>
+            <li>{timeString}이 지나면 다음 친구에게 차례가 넘어갑니다.</li>
           </ul> 
           <div className="mt-8 md:absolute md:-right-20 md:-bottom-10 bg-blue-50 border-2 border-blue-400 shadow-lg p-4 md:p-6 rounded-3xl md:rounded-full md:w-44 md:h-44 flex items-center justify-center text-center text-sm md:text-lg font-bold text-blue-800 animate-pulse"> 
             목소리가 커지면<br className="hidden md:block" /> 물을 마시고<br/> 심호흡을 해요!
