@@ -22,19 +22,21 @@ const speak = (text) => {
   }
 };
 
-const fadeOutAudio = (audio, duration = 2000) => {
+const fadeOutAudio = (audio, duration = 3000) => {
   if (!audio) return;
+
   const startVolume = audio.volume;
-  const interval = 100; // 0.05초마다 줄임
-  const step = startVolume / (duration / interval);
+  const interval = 50; 
+  const steps = duration / interval;
+  const fadeFactor = Math.pow(0.01 / startVolume, 1 / steps); 
 
   const fadeTimer = setInterval(() => {
-    if (audio.volume > step) {
-      audio.volume -= step;
+    if (audio.volume > 0.02) {
+      audio.volume *= fadeFactor; 
     } else {
       audio.volume = 0;
       audio.pause();
-      clearInterval(fadeTimer); 
+      clearInterval(fadeTimer);
       audio.volume = startVolume;
     }
   }, interval);
@@ -54,7 +56,7 @@ function DebateRoom({ onBack }) {
   const [turn, setTurn] = useState(0); 
   const [timeLeft, setTimeLeft] = useState(180); 
   const [isActive, setIsActive] = useState(false);
-  const [introTimer, setIntroTimer] = useState(20);
+  const [introTimer, setIntroTimer] = useState(25);
   const [debateTime, setDebateTime] = useState(180);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -294,6 +296,11 @@ function DebateRoom({ onBack }) {
 
   // --- 2. 안내 화면 (Intro) ---
   if (step === 'intro') {
+    const displayMin = Math.floor(debateTime / 60);
+    const displaySec = debateTime % 60;
+    const timeString = displayMin > 0 
+      ? `${displayMin}분 ${displaySec > 0 ? displaySec + '초' : ''}` 
+      : `${displaySec}초`;
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 md:p-10 text-center space-y-6 md:space-y-10 bg-white overflow-y-auto">
         <h1 className="text-xl md:text-4xl text-slate-500 font-jalnan">오늘의 주제
@@ -304,7 +311,7 @@ function DebateRoom({ onBack }) {
           <ul className="space-y-3 md:space-y-4 text-base md:text-xl text-slate-700 font-medium list-disc ml-4 md:ml-6">            
             <li>토론 시에는 차분하고 예의 있는 존댓말로 말해주세요.</li>
             <li>상대방의 의견을 무시하거나 비방하는 말은 자제해주세요.</li>
-            <li>각 나의 주장 3분, 궁금한점 또는 반론 3분, 최종 정리 3분씩 주어집니다.</li>
+            <li>각 나의 주장 <span className="text-blue-600 font-bold">{timeString}</span>, 궁금한점&반론 <span className="text-blue-600 font-bold">{timeString}</span>, 최종 정리 <span className="text-blue-600 font-bold">{timeString}</span>씩 주어집니다.</li>
             <li>내 순서가 아니더라도 화면을 보며 친구의 의견에 반응해 주세요.</li>
             <li>3분이 지나면 타이머가 울리고 다음 친구에게 차례가 넘어갑니다.</li>
           </ul> 
