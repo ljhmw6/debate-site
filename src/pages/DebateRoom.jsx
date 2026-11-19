@@ -243,7 +243,7 @@ function DebateRoom({ onBack }) {
     const canStart = topic && participants.every(p => p.name.trim() !== "") && timeValid;
     return (
       <div className='min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat'
-          style={{ backgroundImage: "url('/bg.png')", backgroundAttachment: 'fixed' }}>
+          style={{ backgroundImage: "url('/bg.webp')", backgroundAttachment: 'fixed' }}>
         <div className="fixed inset-0 bg-black/40 pointer-events-none"></div>
 
         {/* 💾 지난번에 정한 순서 불러오기 안내창 */}

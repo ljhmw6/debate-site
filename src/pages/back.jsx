@@ -192,7 +192,7 @@ function DebateRoom({ onBack }) {
   if (step === 'input') {
     return (
       <div className='min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat'
-          style={{ backgroundImage: "url('/bg.png')", backgroundAttachment: 'fixed' }}>
+          style={{ backgroundImage: "url('/bg.webp')", backgroundAttachment: 'fixed' }}>
         <div className="fixed inset-0 bg-black/40 pointer-events-none"></div>
         
         {/* 📱 p-6 md:p-10 모바일 여백 조절 */}

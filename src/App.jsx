@@ -14,7 +14,7 @@ function App() {
       {page === 'home' && (
         <div className="relative flex flex-col items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat px-4"
           style={{ 
-            backgroundImage: "url('/bg.png')", 
+            backgroundImage: "url('/bg.webp')", 
             backgroundAttachment: "fixed" 
           }}>
           

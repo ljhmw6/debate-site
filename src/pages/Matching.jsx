@@ -127,7 +127,7 @@ function Matching({ onBack, onStartDebate }) {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center py-6 md:py-10 px-4 bg-cover bg-center bg-no-repeat"
       style={{ 
-        backgroundImage: "url('/bg.png')", 
+        backgroundImage: "url('/bg.webp')", 
         backgroundAttachment: "fixed"
       }}
     > 
