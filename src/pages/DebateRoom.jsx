@@ -65,6 +65,7 @@ function DebateRoom({ onBack }) {
   const [introTimer, setIntroTimer] = useState(25);
   const [debateTime, setDebateTime] = useState(180);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [noSide, setNoSide] = useState(false); // 찬반 없이 토론하기
 
   const roundNames = ["나의 주장", "궁금한점 또는 반론", "최종 정리"]; 
 
@@ -121,6 +122,7 @@ function DebateRoom({ onBack }) {
       if (window.confirm("내용을 불러올까요?")) {
         setTopic(savedTopic);
         setParticipants(JSON.parse(savedResults));
+        setNoSide(localStorage.getItem('next_debate_noside') === 'true');
         setIsLoaded(true);
         hasConfirmed.current = true;
       } else {
@@ -147,8 +149,8 @@ function DebateRoom({ onBack }) {
     let timer;
     if (step === 'intro') {
       const currentP = participants[turn];
-      const side = turn % 2 === 0 ? "찬성측" : "반대측"; 
-      speak(`오늘의 토론 주제는 ${topic}입니다. 주의 사항을 확인하고 준비해 주세요. 첫 번째 발표자 ${side} ${currentP.name} 친구부터 시작합니다.!`);
+      const side = noSide ? "" : (turn % 2 === 0 ? "찬성측 " : "반대측 ");
+      speak(`오늘의 토론 주제는 ${topic}입니다. 주의 사항을 확인하고 준비해 주세요. 첫 번째 발표자 ${side}${currentP.name} 친구부터 시작합니다.!`);
       timer = setInterval(() => {
         setIntroTimer((prev) => {
           if (prev <= 1) {
@@ -167,8 +169,8 @@ function DebateRoom({ onBack }) {
   useEffect(() => {
     if (step === 'debating') {
       const currentP = participants[turn];
-      const side = turn % 2 === 0 ? "찬성측" : "반대측";
-      speak(`${side} ${currentP.name} 친구, ${roundNames[round]} 시작해 주세요!`);
+      const side = noSide ? "" : (turn % 2 === 0 ? "찬성측 " : "반대측 ");
+      speak(`${side}${currentP.name} 친구, ${roundNames[round]} 시작해 주세요!`);
     }
     if (step === 'final') {
       speak("모두 수고했어요! 정답을 찾는 것보다 서로의 의견을 존중하며 대화한 여러분 모두가 오늘의 주인공입니다.");
@@ -260,6 +262,7 @@ function DebateRoom({ onBack }) {
                 <label className="text-lg md:text-xl font-bold ml-1">발표자 ({participants.length}명)</label>
                 {!isLoaded && (
                   <div className="flex gap-2">
+                    <button onClick={() => setNoSide(!noSide)} className={`px-2 py-1 rounded-lg text-xs md:text-sm font-bold border-2 ${noSide ? "bg-purple-600 border-purple-600 text-white" : "bg-white border-purple-200 text-purple-600"}`}>{noSide ? "✅" : "⬜"} 찬반 없이</button>
                     <button onClick={() => adjustParticipants(-1)} className="px-2 py-1 bg-slate-200 rounded-lg text-xs md:text-sm font-bold">- 2명</button>
                     <button onClick={() => adjustParticipants(1)} className="px-2 py-1 bg-blue-500 text-white rounded-lg text-xs md:text-sm font-bold">+ 2명</button>
                   </div>
@@ -268,11 +271,13 @@ function DebateRoom({ onBack }) {
               {/* 📱 모바일에선 1열, PC에선 2열 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-6 md:gap-y-2 md:max-h-none overflow-y-auto pr-1">
                 {participants.map((p, i) => (
-                  <div key={i} className={`p-3 rounded-xl border-2 flex items-center gap-2 md:gap-3 bg-white ${p.team.includes('찬성') ? 'border-blue-100' : 'border-red-100'}`}>
-                    <span className={`w-8 h-6 md:w-11 md:h-8 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm shrink-0 ${p.color}`}>{p.turn}</span>
-                    <span className={`text-[10px] md:text-xs font-black px-1.5 py-1 rounded-lg shrink-0 ${p.team.includes('찬성') ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`}>
-                      {p.team.includes('찬성') ? '찬성' : '반대'}
-                    </span>
+                  <div key={i} className={`p-3 rounded-xl border-2 flex items-center gap-2 md:gap-3 bg-white ${noSide ? 'border-purple-100' : (i % 2 === 0 ? 'border-blue-100' : 'border-red-100')}`}>
+                    <span className={`w-8 h-6 md:w-11 md:h-8 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm shrink-0 ${noSide ? 'bg-purple-500' : (i % 2 === 0 ? 'bg-blue-500' : 'bg-red-500')}`}>{p.turn}</span>
+                    {!noSide && (
+                      <span className={`text-[10px] md:text-xs font-black px-1.5 py-1 rounded-lg shrink-0 ${i % 2 === 0 ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`}>
+                        {i % 2 === 0 ? '찬성' : '반대'}
+                      </span>
+                    )}
                     <input className="w-full bg-transparent font-bold outline-none text-2sm md:text-2xl" value={p.name} placeholder="이름" readOnly={isLoaded} maxLength={9} onChange={(e) => {
                         const newP = [...participants];
                         newP[i].name = e.target.value;
@@ -328,7 +333,7 @@ function DebateRoom({ onBack }) {
         </div>
         <div className="space-y-4">
            <p className="text-lg md:text-2xl font-medium px-4">
-            첫 번째 발표자 <br className="md:hidden" /><span className="text-blue-600 font-black">찬성측</span> 
+            첫 번째 발표자 <br className="md:hidden" />{!noSide && <span className="text-blue-600 font-black">찬성측</span>} 
             <span className="text-green-600 font-black"> {participants[0]?.name}</span> 친구부터 시작합니다!
           </p>
           <div className="text-slate-400 font-bold bg-slate-100 py-2 px-6 rounded-full inline-block text-sm">
@@ -351,8 +356,8 @@ function DebateRoom({ onBack }) {
       <div className="h-screen flex flex-col items-center justify-center py-10 px-6 text-center bg-white overflow-hidden relative">
         <div className="space-y-4 md:space-y-6 z-10 w-full"> 
           <p className="text-purple-600 text-sm md:text-2xl font-black font-jalnan opacity-70">{topic}</p>
-          <h2 className={`text-3xl md:text-5xl font-jalnan font-black transition-colors ${isChan ? "text-blue-600" : "text-red-600"}`}>
-            {isChan ? "찬성측" : "반대측"} <span className="text-green-600">{currentP?.name}</span> 
+          <h2 className={`text-3xl md:text-5xl font-jalnan font-black transition-colors ${noSide ? "text-slate-700" : isChan ? "text-blue-600" : "text-red-600"}`}>
+            {!noSide && (isChan ? "찬성측" : "반대측")} <span className="text-green-600">{currentP?.name}</span> 
             <div className="text-4xl md:text-7xl mt-2 md:mt-5 text-slate-600">
               {roundNames[round]}
             </div>
@@ -361,7 +366,9 @@ function DebateRoom({ onBack }) {
           <div className="bg-yellow-50 p-3 md:p-4 rounded-2xl inline-block max-w-7xl shadow-sm mx-4">
           <p className="text-xl md:text-2xl text-slate-700 font-bold leading-snug break-keep">
             {round === 0 && (
-              <>{isChan ? '찬성' : '반대'}하는 <span className="text-orange-600">이유와 근거</span>를 <br className="md:hidden" /><span className="text-orange-600">1~3가지</span> 이야기 해주세요</>
+              noSide
+                ? <>나의 생각과 <span className="text-orange-600">이유와 근거</span>를 <br className="md:hidden" /><span className="text-orange-600">1~3가지</span> 이야기 해주세요</>
+                : <>{isChan ? '찬성' : '반대'}하는 <span className="text-orange-600">이유와 근거</span>를 <br className="md:hidden" /><span className="text-orange-600">1~3가지</span> 이야기 해주세요</>
             )}
             {round === 1 && (
               <>친구의 말에서 <span className="text-orange-500">궁금한 거나, <br className="md:hidden" />생각이 다른 부분</span>을 말해보세요</>
@@ -387,9 +394,11 @@ function DebateRoom({ onBack }) {
           ) : ( 
             <p className="text-lg md:text-2xl text-slate-600 font-bold leading-snug  mt-3 md:mt-0">
             다음 순서는 
-            <span className={ (nextIdx % 2 === 0) ? "text-blue-600 ml-2" : "text-red-600 ml-2" }>
-              {(nextIdx % 2 === 0) ? "찬성측" : "반대측"}
-            </span>  
+            {!noSide && (
+              <span className={ (nextIdx % 2 === 0) ? "text-blue-600 ml-2" : "text-red-600 ml-2" }>
+                {(nextIdx % 2 === 0) ? "찬성측" : "반대측"}
+              </span>
+            )}
             <span className="text-green-600 font-black mx-2">
               {nextP?.name}
             </span> 

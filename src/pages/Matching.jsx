@@ -33,6 +33,7 @@ function Matching({ onBack, onStartDebate }) {
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [noSide, setNoSide] = useState(false); // 찬반 없이 토론하기
 
   // 컴포넌트가 사라질 때(Unmount) 음성 끄기
   useEffect(() => {
@@ -90,13 +91,17 @@ function Matching({ onBack, onStartDebate }) {
     setTimeout(() => {
       drumRollSound.currentTime = 5.1;
 
-      speak(`토론팀이 정해졌습니다. 찬성팀과 반대팀을 확인하세요`);
+      speak(noSide
+        ? `발표 순서가 정해졌습니다. 내 순서를 확인하세요`
+        : `토론팀이 정해졌습니다. 찬성팀과 반대팀을 확인하세요`);
 
-      const positions = names.map((_, i) => ({
-        turn: i + 1,
-        team: i % 2 === 0 ? "찬성" : "반대",
-        color: i % 2 === 0 ? "bg-blue-500" : "bg-red-500"
-      }));
+      const positions = names.map((_, i) => noSide
+        ? { turn: i + 1, team: "", color: "bg-purple-500" }
+        : {
+            turn: i + 1,
+            team: i % 2 === 0 ? "찬성" : "반대",
+            color: i % 2 === 0 ? "bg-blue-500" : "bg-red-500"
+          });
 
       const shuffledNames = [...names]
         .filter(n => n.trim() !== "")
@@ -109,6 +114,7 @@ function Matching({ onBack, onStartDebate }) {
 
       localStorage.setItem('next_debate_topic', topic);
       localStorage.setItem('next_debate_results', JSON.stringify(finalMatch));
+      localStorage.setItem('next_debate_noside', noSide ? 'true' : 'false');
 
       setResults(finalMatch);
       setIsSpinning(false);
@@ -187,7 +193,19 @@ function Matching({ onBack, onStartDebate }) {
               </div>
             </section>
 
-            <button 
+            <button
+              type="button"
+              onClick={() => setNoSide(!noSide)}
+              className={`w-full mb-3 py-3 rounded-2xl text-base md:text-lg font-bold border-2 transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                noSide
+                  ? "bg-purple-600 border-purple-600 text-white shadow-md shadow-purple-200"
+                  : "bg-white border-purple-200 text-purple-600 hover:bg-purple-50"
+              }`}
+            >
+              {noSide ? "✅" : "⬜"} 찬반 없이 토론하기
+            </button>
+
+            <button
               onClick={runLadder}
               className={`w-full py-4 md:py-5 rounded-2xl text-lg md:text-xl font-bold text-white shadow-lg transition-all active:scale-95 ${
                 topic && names.every(n => n.trim() !== "") 
@@ -210,7 +228,27 @@ function Matching({ onBack, onStartDebate }) {
               <div className="animate-in fade-in zoom-in duration-500">
                 <h3 className="text-lg md:text-2xl font-bold text-purple-600 mb-6 md:mb-8 px-4 leading-tight">{topic} </h3>
                 
-                {/* 📱 결과 리스트: 모바일에선 세로로 1팀씩, PC에선 가로로 2팀 */}
+                {noSide ? (
+                  /* 찬반 없이: 순서만 표시 */
+                  <div className="space-y-3 md:space-y-4">
+                    <div className="text-center py-2 bg-purple-500 text-white rounded-xl font-jalnan shadow-md mb-2 md:mb-4 text-lg md:text-2xl">
+                      발표 순서
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                      {results.map((res, i) => (
+                        <div key={i} className="flex items-center p-2 bg-white rounded-2xl border-2 border-purple-50 shadow-sm">
+                          <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full font-jalnan flex items-center justify-center text-white font-black text-lg md:text-xl mr-3 ${res.color} shrink-0`}>
+                            {res.turn}
+                          </div>
+                          <div className="flex-1 text-left min-w-0">
+                            <div className="text-lg md:text-xl font-bold text-slate-800 truncate">{res.name}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                /* 📱 결과 리스트: 모바일에선 세로로 1팀씩, PC에선 가로로 2팀 */
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 md:gap-8">
                   {/* 찬성 팀 */}
                   <div className="space-y-3 md:space-y-4 mb-5 md:mb-0">
@@ -246,6 +284,7 @@ function Matching({ onBack, onStartDebate }) {
                     ))}
                   </div>
                 </div>
+                )}
 
                 <div className="mt-8 space-y-4">
                   <p className="text-slate-400 text-xs md:text-sm px-4">
