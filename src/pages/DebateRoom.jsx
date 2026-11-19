@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Home } from 'lucide-react';
+import confetti from 'canvas-confetti';
+import PageBackground from '../components/PageBackground';
 
 const MIN_TIME = 10;  // 발표시간 최소(초)
 const MAX_TIME = 600; // 발표시간 최대(초)
@@ -180,7 +183,7 @@ function DebateRoom({ onBack }) {
       speak(`${side}${currentP.name} 친구, ${roundNames[round]} 시작해 주세요!`);
     }
     if (step === 'final') {
-      speak("모두 수고했어요! 정답을 찾는 것보다 서로의 의견을 존중하며 대화한 여러분 모두가 오늘의 주인공입니다.");
+      speak("정말 멋진 토론이었어요! 내 생각을 용기 있게 말하고, 친구의 이야기에 끝까지 귀 기울인 여러분 모두가 오늘의 주인공입니다. 모두 서로에게 큰 박수를 보내 주세요!");
     }
   }, [turn, round, step]);
 
@@ -195,7 +198,19 @@ function DebateRoom({ onBack }) {
 
       return () => clearTimeout(fadeTimeout);
     }
-  }, [step]); 
+  }, [step]);
+
+  // 종료 화면 축하 꽃가루 (움직임 줄이기 설정이면 생략)
+  useEffect(() => {
+    if (step !== 'final') return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const colors = ['#3b82f6', '#8b5cf6', '#facc15', '#38bdf8', '#ffffff'];
+    const fire = (opts) => confetti({ particleCount: 70, spread: 65, startVelocity: 48, colors, ...opts });
+    fire({ origin: { x: 0.1, y: 0.75 }, angle: 60 });
+    fire({ origin: { x: 0.9, y: 0.75 }, angle: 120 });
+    const t = setTimeout(() => fire({ origin: { x: 0.5, y: 0.25 }, spread: 120, particleCount: 50, startVelocity: 30 }), 800);
+    return () => { clearTimeout(t); confetti.reset(); };
+  }, [step]);
 
   const handleNext = () => { 
     if (turn < participants.length - 1) {
@@ -242,21 +257,20 @@ function DebateRoom({ onBack }) {
     const timeValid = timeLeft !== "" && Number(timeLeft) >= MIN_TIME && Number(timeLeft) <= MAX_TIME;
     const canStart = topic && participants.every(p => p.name.trim() !== "") && timeValid;
     return (
-      <div className='min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat'
-          style={{ backgroundImage: "url('/bg.webp')", backgroundAttachment: 'fixed' }}>
-        <div className="fixed inset-0 bg-black/40 pointer-events-none"></div>
+      <div className='relative min-h-screen flex items-center justify-center p-4 py-6 md:py-10'>
+        <PageBackground variant="soft" />
 
         {/* 💾 지난번에 정한 순서 불러오기 안내창 */}
         {savedData && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-            <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6 md:p-8 animate-in fade-in zoom-in duration-300">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="w-full max-w-lg bg-white rounded-[2rem] shadow-2xl ring-1 ring-blue-100 p-6 md:p-8 animate-in fade-in zoom-in duration-300">
               <h3 className="text-xl md:text-2xl font-black text-slate-800 font-jalnan mb-1">📋 정해둔 순서가 있어요!</h3>
               <p className="text-slate-500 text-sm md:text-base mb-5">순서 정하기에서 만든 내용을 불러올까요?</p>
 
-              <div className="bg-slate-50 rounded-2xl p-4 mb-6 space-y-3">
+              <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-4 mb-6 space-y-3">
                 <div>
                   <span className="text-xs font-bold text-slate-400">주제</span>
-                  <p className="text-base md:text-lg font-black text-purple-600 break-keep">{savedData.topic}</p>
+                  <p className="text-base md:text-lg font-black text-violet-700 break-keep">{savedData.topic}</p>
                 </div>
                 <div>
                   <span className="text-xs font-bold text-slate-400">
@@ -265,7 +279,7 @@ function DebateRoom({ onBack }) {
                   <div className="flex flex-wrap gap-2 mt-1 max-h-40 overflow-y-auto">
                     {savedData.results.map((p, i) => (
                       <span key={i} className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-full pl-1 pr-3 py-1 text-sm font-bold text-slate-700">
-                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs ${savedData.noSide ? 'bg-purple-500' : (i % 2 === 0 ? 'bg-blue-500' : 'bg-red-500')}`}>{i + 1}</span>
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs ${savedData.noSide ? 'bg-violet-500' : (i % 2 === 0 ? 'bg-blue-500' : 'bg-red-500')}`}>{i + 1}</span>
                         {p.name}
                         {!savedData.noSide && (
                           <span className={`text-[10px] ${i % 2 === 0 ? 'text-blue-600' : 'text-red-600'}`}>{i % 2 === 0 ? '찬성' : '반대'}</span>
@@ -277,10 +291,10 @@ function DebateRoom({ onBack }) {
               </div>
 
               <div className="flex gap-3">
-                <button onClick={() => setSavedData(null)} className="flex-1 py-3 md:py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold text-base md:text-lg hover:bg-slate-200 active:scale-95 transition-all">
+                <button onClick={() => setSavedData(null)} className="flex-1 py-3 md:py-4 bg-white border-2 border-slate-200 text-slate-600 rounded-2xl font-bold text-base md:text-lg hover:border-slate-300 active:scale-95 transition-all">
                   새로 입력할게요
                 </button>
-                <button onClick={loadSaved} className="flex-1 py-3 md:py-4 bg-blue-600 text-white rounded-2xl font-bold text-base md:text-lg shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all">
+                <button onClick={loadSaved} className="flex-1 py-3 md:py-4 bg-linear-to-r from-blue-600 to-violet-600 text-white rounded-2xl font-bold text-base md:text-lg shadow-lg shadow-violet-500/30 hover:from-blue-500 hover:to-violet-500 active:scale-95 transition-all">
                   불러오기
                 </button>
               </div>
@@ -289,43 +303,43 @@ function DebateRoom({ onBack }) {
         )}
         
         {/* 📱 p-6 md:p-10 모바일 여백 조절 */}
-        <div className="p-6 md:p-10 z-10 w-full max-w-3xl bg-white/95 backdrop-blur-sm shadow-2xl rounded-3xl relative">
+        <div className="p-6 md:p-10 z-10 w-full max-w-3xl bg-white/90 backdrop-blur-xl border border-white/80 ring-1 ring-blue-100/60 shadow-[0_24px_60px_-20px_rgba(30,58,138,0.5)] rounded-[2rem] relative">
           <header className="flex justify-between items-center mb-6 md:mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 font-jalnan">🎤 토론 설정</h2>
-            <button onClick={handleGoHome} className="text-xl p-2 bg-slate-100 rounded-xl hover:bg-slate-200">🏠</button>
+            <h2 className="text-2xl md:text-3xl text-slate-800 font-jalnan">🎤 토론 설정</h2>
+            <button onClick={handleGoHome} title="홈으로 가기" aria-label="홈으로 가기" className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white/90 text-slate-600 border border-slate-200 hover:text-blue-600 hover:border-blue-300 rounded-2xl shadow-sm transition-all active:scale-90"><Home size={22} strokeWidth={2.25} /></button>
           </header>
           
           <div className="space-y-6 md:space-y-8"> 
             <section>
-              <label className="block text-lg md:text-xl font-bold mb-2 ml-1">오늘의 주제</label>
+              <label className="block text-lg md:text-xl font-bold text-slate-700 mb-2 ml-1">오늘의 주제</label>
               {isLoaded ? (
                 <div className="group relative py-2"> 
-                  <p className="text-xl md:text-3xl font-black text-purple-600 font-jalnan break-keep">
+                  <p className="text-xl md:text-3xl font-black text-violet-700 font-jalnan break-keep">
                     {topic}
                   </p> 
                   <button onClick={() => setIsLoaded(false)} className="absolute -top-8 -right-2 bg-white border border-slate-200 rounded-full px-2 py-1 text-xs shadow-sm hover:bg-slate-50">✏️ 수정</button>
                 </div>
               ) : ( 
-                <input className="w-full p-3 border-2 border-slate-200 rounded-xl text-sm md:text-xl font-bold bg-white focus:border-blue-400 outline-none transition-all" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="주제를 입력해 주세요!" />
+                <input className="w-full p-3 md:p-4 border-2 border-blue-100 rounded-2xl text-sm md:text-xl font-bold bg-white/90 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 placeholder:text-slate-400 outline-none transition-all"value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="주제를 입력해 주세요!" />
               )}
             </section>
  
             <section>
               <div className="flex justify-between items-center mb-4">
-                <label className="text-lg md:text-xl font-bold ml-1">발표자 ({participants.length}명)</label>
+                <label className="text-lg md:text-xl font-bold text-slate-700 ml-1">발표자 ({participants.length}명)</label>
                 {!isLoaded && (
-                  <div className="flex gap-2">
-                    <button onClick={() => setNoSide(!noSide)} className={`px-2 py-1 rounded-lg text-xs md:text-sm font-bold border-2 ${noSide ? "bg-purple-600 border-purple-600 text-white" : "bg-white border-purple-200 text-purple-600"}`}>{noSide ? "✅" : "⬜"} 찬반 없이</button>
-                    <button onClick={() => adjustParticipants(-1)} className="px-2 py-1 bg-slate-200 rounded-lg text-xs md:text-sm font-bold">- 2명</button>
-                    <button onClick={() => adjustParticipants(1)} className="px-2 py-1 bg-blue-500 text-white rounded-lg text-xs md:text-sm font-bold">+ 2명</button>
+                  <div className="flex gap-1.5 md:gap-2">
+                    <button onClick={() => setNoSide(!noSide)} className={`px-2.5 py-1.5 rounded-xl text-xs md:text-sm font-bold border-2 transition-all active:scale-95 ${noSide ? "bg-violet-600 border-violet-600 text-white" : "bg-white/90 border-violet-200 text-violet-700 hover:bg-violet-50"}`}>{noSide ? "✅" : "⬜"} 찬반 없이</button>
+                    <button onClick={() => adjustParticipants(-1)} className="px-2.5 py-1.5 bg-white/90 border-2 border-slate-200 text-slate-600 rounded-xl text-xs md:text-sm font-bold hover:border-slate-300 transition-all active:scale-95">- 2명</button>
+                    <button onClick={() => adjustParticipants(1)} className="px-2.5 py-1.5 bg-blue-600 border-2 border-blue-600 text-white rounded-xl text-xs md:text-sm font-bold hover:bg-blue-500 transition-all active:scale-95">+ 2명</button>
                   </div>
                 )}
               </div>              
               {/* 📱 모바일에선 1열, PC에선 2열 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-6 md:gap-y-2 md:max-h-none overflow-y-auto pr-1">
                 {participants.map((p, i) => (
-                  <div key={i} className={`p-3 rounded-xl border-2 flex items-center gap-2 md:gap-3 bg-white ${noSide ? 'border-purple-100' : (i % 2 === 0 ? 'border-blue-100' : 'border-red-100')}`}>
-                    <span className={`w-8 h-6 md:w-11 md:h-8 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm shrink-0 ${noSide ? 'bg-purple-500' : (i % 2 === 0 ? 'bg-blue-500' : 'bg-red-500')}`}>{p.turn}</span>
+                  <div key={i} className={`p-3 rounded-2xl border-2 flex items-center gap-2 md:gap-3 bg-white/90 transition-all focus-within:ring-4 ${noSide ? 'border-violet-100 focus-within:ring-violet-100' : (i % 2 === 0 ? 'border-blue-100 focus-within:ring-blue-100' : 'border-red-100 focus-within:ring-red-100')}`}>
+                    <span className={`w-8 h-6 md:w-11 md:h-8 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm shrink-0 ${noSide ? 'bg-violet-500' : (i % 2 === 0 ? 'bg-blue-500' : 'bg-red-500')}`}>{p.turn}</span>
                     {!noSide && (
                       <span className={`text-[10px] md:text-xs font-black px-1.5 py-1 rounded-lg shrink-0 ${i % 2 === 0 ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`}>
                         {i % 2 === 0 ? '찬성' : '반대'}
@@ -343,8 +357,8 @@ function DebateRoom({ onBack }) {
   
             <section className="rounded-2xl"> 
               <div className="flex flex-wrap items-center gap-3">
-                <span className="text-slate-500 font-bold text-base md:text-xl">발표시간</span>
-                <input type="number" min={MIN_TIME} max={MAX_TIME} step={10} className={`w-14 md:w-20 p-1 md:p-1 border-2 rounded-lg text-center text-sm md:text-xl font-bold bg-white outline-none ${timeValid ? "border-slate-500" : "border-red-500"}`} value={timeLeft} onChange={(e) => setTimeLeft(e.target.value === "" ? "" : Number(e.target.value))} onBlur={() => setTimeLeft(clampTime(timeLeft))} />
+                <span className="text-slate-700 font-bold text-base md:text-xl">발표시간</span>
+                <input type="number" min={MIN_TIME} max={MAX_TIME} step={10} className={`w-16 md:w-24 p-1.5 border-2 rounded-xl text-center text-sm md:text-xl font-bold bg-white/90 outline-none focus:ring-4 transition-all ${timeValid ? "border-blue-200 focus:border-blue-400 focus:ring-blue-100" : "border-red-500 focus:ring-red-100"}`} value={timeLeft} onChange={(e) => setTimeLeft(e.target.value === "" ? "" : Number(e.target.value))} onBlur={() => setTimeLeft(clampTime(timeLeft))} />
                 <span className="text-slate-400 font-bold text-sm md:text-lg">초 ({Math.floor((Number(timeLeft) || 0) / 60)}분 {(Number(timeLeft) || 0) % 60}초)</span>
               </div>
               {!timeValid && (
@@ -352,7 +366,7 @@ function DebateRoom({ onBack }) {
               )}
             </section>
             
-            <button onClick={startDebate} className={`w-full py-4 md:py-5 text-white text-xl md:text-2xl font-bold rounded-2xl shadow-xl transition-all ${canStart ? "bg-blue-600 shadow-blue-200" : "bg-slate-300 cursor-not-allowed"}`} disabled={!canStart}>
+            <button onClick={startDebate} className={`w-full py-4 md:py-5 text-white text-xl md:text-2xl font-bold rounded-2xl transition-all ${canStart ? "bg-linear-to-r from-blue-600 to-violet-600 shadow-xl shadow-violet-500/30 hover:from-blue-500 hover:to-violet-500 hover:-translate-y-0.5 active:scale-[0.98]" : "bg-slate-300 cursor-not-allowed"}`} disabled={!canStart}>
               토론 시작하기 🚀
             </button>
           </div>
@@ -369,11 +383,13 @@ function DebateRoom({ onBack }) {
       ? `${displayMin}분 ${displaySec > 0 ? displaySec + '초' : ''}` 
       : `${displaySec}초`;
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 md:p-10 text-center space-y-6 md:space-y-10 bg-white overflow-y-auto">
+      <div className="relative min-h-screen flex flex-col items-center justify-center p-6 md:p-10 text-center overflow-y-auto">
+        <PageBackground variant="focus" />
+        <div className="relative z-10 w-full flex flex-col items-center space-y-6 md:space-y-10">
         <h1 className="text-xl md:text-4xl text-slate-500 font-jalnan">오늘의 주제
-            <p className="text-purple-600 text-lg md:text-3xl mt-2 font-black break-keep px-4">{topic}</p>
+            <p className="text-violet-700 text-lg md:text-3xl mt-2 font-black break-keep px-4">{topic}</p>
         </h1>
-        <div className="bg-slate-50 p-6 md:p-10 rounded-3xl border-2 border-slate-100 text-left w-full max-w-3xl relative">
+        <div className="bg-white/80 backdrop-blur-xl p-6 md:p-10 rounded-[2rem] border border-white ring-1 ring-blue-100 shadow-[0_24px_60px_-24px_rgba(30,58,138,0.35)] text-left w-full max-w-3xl relative">
           <h3 className="text-xl md:text-3xl font-bold mb-4 md:mb-6 text-slate-800 font-jalnan">토론 시 주의 사항</h3>
           <ul className="space-y-3 md:space-y-4 text-base md:text-xl text-slate-700 font-medium list-disc ml-4 md:ml-6">            
             <li>토론 시에는 차분하고 예의 있는 존댓말로 말해주세요.</li>
@@ -383,7 +399,7 @@ function DebateRoom({ onBack }) {
             <li>내 순서가 아니더라도 화면을 보며 친구의 의견에 반응해 주세요.</li>
             <li>{timeString}이 지나면 다음 친구에게 차례가 넘어갑니다.</li>
           </ul> 
-          <div className="mt-8 md:absolute md:-right-20 md:-bottom-10 bg-blue-50 border-2 border-blue-400 shadow-lg p-4 md:p-6 rounded-3xl md:rounded-full md:w-44 md:h-44 flex items-center justify-center text-center text-sm md:text-lg font-bold text-blue-800 animate-pulse"> 
+          <div className="mt-8 md:absolute md:-right-20 md:-bottom-10 bg-sky-50 border-2 border-sky-300 shadow-lg shadow-sky-500/20 p-4 md:p-6 rounded-3xl md:rounded-full md:w-44 md:h-44 flex items-center justify-center text-center text-sm md:text-lg font-bold text-blue-800 animate-pulse"> 
             목소리가 커지면<br className="hidden md:block" /> 물을 마시고<br/> 심호흡을 해요!
           </div>
         </div>
@@ -392,9 +408,10 @@ function DebateRoom({ onBack }) {
             첫 번째 발표자 <br className="md:hidden" />{!noSide && <span className="text-blue-600 font-black">찬성측</span>} 
             <span className="text-green-600 font-black"> {participants[0]?.name}</span> 친구부터 시작합니다!
           </p>
-          <div className="text-slate-400 font-bold bg-slate-100 py-2 px-6 rounded-full inline-block text-sm">
+          <div className="text-slate-500 font-bold bg-white/80 border border-slate-200 py-2 px-6 rounded-full inline-block text-sm tabular-nums">
             {Math.floor(introTimer / 60)}분 {introTimer % 60}초 후 자동 시작
           </div>
+        </div>
         </div>
       </div>
     );
@@ -409,9 +426,10 @@ function DebateRoom({ onBack }) {
     const isLastSpeakerOfRound = turn === participants.length - 1;
 
     return (
-      <div className="h-screen flex flex-col items-center justify-center py-10 px-6 text-center bg-white overflow-hidden relative">
-        <div className="space-y-4 md:space-y-6 z-10 w-full"> 
-          <p className="text-purple-600 text-sm md:text-2xl font-black font-jalnan opacity-70">{topic}</p>
+      <div className="h-screen h-svh flex flex-col items-center justify-center py-10 px-6 text-center overflow-hidden relative">
+        <PageBackground variant="focus" />
+        <div className="space-y-4 md:space-y-6 relative z-10 w-full">
+          <p className="inline-block max-w-full px-4 py-1.5 md:px-6 md:py-2 rounded-full bg-white/70 border border-violet-100 text-violet-700 text-sm md:text-2xl font-black font-jalnan break-keep">{topic}</p>
           <h2 className={`text-3xl md:text-5xl font-jalnan font-black transition-colors ${noSide ? "text-slate-700" : isChan ? "text-blue-600" : "text-red-600"}`}>
             {!noSide && (isChan ? "찬성측" : "반대측")} <span className="text-green-600">{currentP?.name}</span> 
             <div className="text-4xl md:text-7xl mt-2 md:mt-5 text-slate-600">
@@ -419,7 +437,7 @@ function DebateRoom({ onBack }) {
             </div>
           </h2> 
 
-          <div className="bg-yellow-50 p-3 md:p-4 rounded-2xl inline-block max-w-7xl shadow-sm mx-4">
+          <div className="bg-amber-50/90 border border-amber-100 p-3 md:p-4 md:px-6 rounded-2xl inline-block max-w-7xl shadow-sm mx-4">
           <p className="text-xl md:text-2xl text-slate-700 font-bold leading-snug break-keep">
             {round === 0 && (
               noSide
@@ -438,13 +456,13 @@ function DebateRoom({ onBack }) {
         </div>
    
         {/* 📱 타이머 크기 핵심! 모바일에선 text-7xl, PC에선 17rem */}
-        <div className={`text-9xl sm:text-[10rem] md:text-[15rem] lg:text-[17rem] mt-6 md:mt-10 mb-4 md:mb-7 font-black tabular-nums timer-font tracking-tighter leading-none select-none transition-colors 
+        <div className={`relative z-10 text-9xl sm:text-[10rem] md:text-[15rem] lg:text-[17rem] mt-6 md:mt-10 mb-4 md:mb-7 font-black tabular-nums timer-font tracking-tighter leading-none select-none transition-colors 
             ${timeLeft <= 3 ? "text-red-600 animate-pulse" : timeLeft <= 9 ? "text-orange-500" : "text-slate-800"}`}
         >
           {formatTime(timeLeft)}
         </div> 
 
-        <div className="w-full max-w-6xl px-4"> 
+        <div className="relative z-10 w-full max-w-6xl px-4">
           {round === 2 && isLastSpeakerOfRound ? (
             <p className="text-2xl md:text-3xl text-orange-600 font-black animate-bounce font-jalnan mt-5">마무리할 시간이에요! ✨</p>
           ) : ( 
@@ -459,7 +477,7 @@ function DebateRoom({ onBack }) {
               {nextP?.name}
             </span> 
             친구의 <br className="md:hidden" />
-            <span className="text-purple-500 ml-1">
+            <span className="text-violet-600 ml-1">
               {isLastSpeakerOfRound ? roundNames[round + 1] : roundNames[round]}
             </span> 시간입니다. <br className="md:hidden" />준비해 주세요.
           </p>
@@ -467,7 +485,7 @@ function DebateRoom({ onBack }) {
         </div>
         
         {/* 📱 모바일용 다음 버튼 (작게 배치) */}
-        <button onClick={handleNext} className="mt-8 px-6 py-2 bg-slate-100 text-slate-400 rounded-full text-xs font-bold ">건너뛰기</button>
+        <button onClick={handleNext} className="relative z-10 mt-8 px-6 py-2 bg-white/70 border border-slate-200 text-slate-500 hover:text-slate-700 rounded-full text-xs font-bold transition-colors">건너뛰기</button>
       </div>
     );
   }
@@ -475,21 +493,59 @@ function DebateRoom({ onBack }) {
   // --- 4. 종료 화면 (Final) ---
   if (step === 'final') {
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 space-y-6 md:space-y-10 text-center bg-slate-50"> 
-            <div className="text-6xl md:text-8xl mb-8 md:mb-16 animate-bounce">👏</div>            
-            <h1 className="text-4xl md:text-6xl font-black text-slate-800 font-jalnan">모두 수고했어요!</h1>
-            
-            <div className="space-y-6 max-w-3xl px-4">
-                <div className="text-lg md:text-2xl leading-relaxed text-slate-600 font-medium break-keep">
-                  정답을 찾는 것보다 <br className="md:hidden" />서로의 의견을 존중하며 대화한<br/>
-                  <p className="mt-4 text-2xl md:text-3xl text-green-600 font-bold md:underline decoration-green-200 underline-offset-8 font-jalnan">
-                    여러분 모두가 <br className="md:hidden" />오늘의 주인공입니다.
-                  </p>
+        <div className="final-hero text-center">
+          {/* 배경: 넓은 화면은 전체 배경, 세로 화면은 흐린 배경 + 하단 이미지 띠 (index.css) */}
+          <div className="final-bg" aria-hidden="true"></div>
+          <div className="final-glow" aria-hidden="true"></div>
+
+          {/* 가운데 하늘 영역에만 배치 → 양옆 아이들 얼굴은 가리지 않음 */}
+          <div className="final-content">
+            <div className="final-column flex flex-col items-center gap-[clamp(0.75rem,2.2vh,1.25rem)] animate-in fade-in zoom-in duration-700">
+              <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/80 border border-white text-blue-700 text-sm md:text-base font-bold shadow-sm">
+                🏆 오늘의 토론 완주!
+              </span>
+
+              <h1 className="font-jalnan text-slate-800 leading-tight text-balance text-[clamp(2rem,min(9vw,6.5vh),3.75rem)] drop-shadow-[0_2px_12px_rgba(255,255,255,0.9)]">
+                정말 <span className="text-violet-600">멋진</span> 토론이었어요!
+              </h1>
+
+              <p className="text-slate-700 font-medium text-balance leading-relaxed text-[clamp(0.95rem,2.3vh,1.3rem)]">
+                내 생각을 용기 있게 말하고,<br />
+                친구의 이야기에 끝까지 귀 기울인<br />
+                <b className="text-blue-700">여러분 모두가 오늘의 주인공</b>이에요.
+              </p>
+
+              {/* 칭찬 배지 */}
+              <ul className="flex flex-wrap justify-center gap-2">
+                {["🗣️ 용기 있게 말했어요", "👂 끝까지 잘 들었어요", "🤝 서로 존중했어요"].map((t) => (
+                  <li key={t} className="px-3 py-1.5 rounded-full bg-white/75 backdrop-blur border border-white text-slate-700 text-xs md:text-sm font-bold shadow-sm">
+                    {t}
+                  </li>
+                ))}
+              </ul>
+
+              {/* 오늘의 주인공 이름 */}
+              {participants.some(p => p.name.trim()) && (
+                <div className="w-full rounded-3xl bg-white/60 backdrop-blur-md border border-white/80 px-4 py-3 shadow-[0_12px_30px_-15px_rgba(30,58,138,0.35)]">
+                  <p className="text-xs md:text-sm font-bold text-slate-500 mb-2">⭐ 오늘의 주인공 ⭐</p>
+                  <div className="flex flex-wrap justify-center gap-1.5 md:gap-2">
+                    {participants.filter(p => p.name.trim()).map((p, i) => (
+                      <span key={i} className="px-3 py-1 rounded-full bg-linear-to-r from-amber-100 to-yellow-50 border border-amber-200 text-amber-900 text-sm md:text-base font-bold">
+                        {p.name}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-            </div> 
-            <button onClick={handleGoHome} className="flex items-center gap-3 px-8 py-4 md:px-12 md:py-5 bg-slate-900 text-white rounded-2xl md:rounded-3xl text-xl md:text-2xl font-bold shadow-2xl active:scale-95 transition-all">
-              🏠 메인으로 돌아가기
-            </button> 
+              )}
+
+              <button onClick={handleGoHome} className="mt-1 flex items-center gap-2.5 px-8 h-[clamp(3.25rem,7vh,4rem)] bg-linear-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white rounded-2xl text-lg md:text-xl font-bold shadow-xl shadow-violet-500/30 hover:-translate-y-0.5 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-300">
+                <Home size={22} strokeWidth={2.25} /> 메인으로 돌아가기
+              </button>
+            </div>
+          </div>
+
+          {/* 세로 화면 전용: 아이들이 모두 보이는 이미지 띠 */}
+          <div className="final-strip" aria-hidden="true"></div>
         </div>
     );
   }

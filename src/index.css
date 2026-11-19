@@ -37,3 +37,154 @@ body {
   -webkit-font-feature-settings: "tnum";
   font-weight: 800; /* 타이머는 두꺼워야 제맛! */
 }
+/* ───────── 홈 화면 히어로 ───────── */
+.home-hero {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  background-color: #eaf2ff;
+}
+.home-bg {
+  position: absolute;
+  inset: 0;
+  background: url('/bg.webp') center 40% / cover no-repeat;
+}
+/* 하늘(카드) 영역만 살짝 밝혀서 가독성 확보, 아이들 얼굴 쪽은 그대로 */
+.home-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(236, 243, 255, 0.55) 0%,
+    rgba(236, 243, 255, 0.25) 38%,
+    rgba(236, 243, 255, 0) 58%);
+}
+.home-content {
+  position: relative;
+  z-index: 10;
+  min-height: 48svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vh, 48px) 16px 0;
+}
+.home-strip { display: none; }
+
+/* 세로로 긴 화면(모바일·태블릿 세로): 배경을 잘라내면 양 끝 아이들 얼굴이 잘리므로
+   이미지 전체를 하단 띠로 보여주고, 뒤는 같은 이미지를 흐리게 깔아 색감을 맞춤 */
+@media (max-aspect-ratio: 6/5) {
+  .home-hero { display: flex; flex-direction: column; }
+  .home-bg {
+    background-position: center top;
+    filter: blur(28px) saturate(1.1);
+    transform: scale(1.2);
+  }
+  .home-veil {
+    background: linear-gradient(180deg, rgba(240, 246, 255, 0.6), rgba(240, 246, 255, 0.35));
+  }
+  .home-content {
+    flex: 1;
+    min-height: 0;
+    padding-bottom: 8px;
+  }
+  .home-strip {
+    display: block;
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    aspect-ratio: 1672 / 941;
+    margin-top: -6%;
+    background: url('/bg.webp') center / cover no-repeat;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 24%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 24%);
+  }
+}
+
+/* ───────── 내부 페이지 공통 배경 ───────── */
+/* background-attachment: fixed 는 iOS에서 동작하지 않아 고정 레이어로 처리
+   크기를 100vw/100vh로 고정 → 스크롤바가 생기거나 모바일 주소창이 접혀도 배경이 다시 계산되지(움직이지) 않음 */
+.page-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background-color: #eaf2ff;
+}
+.page-bg__img {
+  position: absolute;
+  inset: 0;
+  background: url('/bg.webp') center 40% / cover no-repeat;
+}
+.page-bg__veil { position: absolute; inset: 0; }
+
+.page-bg--soft .page-bg__veil {
+  background: linear-gradient(180deg, rgba(30, 58, 138, 0.22) 0%, rgba(30, 58, 138, 0.12) 50%, rgba(30, 58, 138, 0.28) 100%);
+}
+.page-bg--focus .page-bg__img {
+  /* 아이들 얼굴 대신 창밖 하늘 부분만 확대해 흐리게 → 깨끗한 하늘빛 */
+  filter: blur(36px) saturate(1.1);
+  transform: scale(2.2);
+  transform-origin: 45% 0%;
+}
+.page-bg--focus .page-bg__veil {
+  background: linear-gradient(180deg, rgba(246, 249, 255, 0.82), rgba(240, 245, 255, 0.74));
+}
+
+/* ───────── 토론 종료 화면 ───────── */
+.final-hero {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: #cfe4ff;
+}
+.final-bg {
+  position: absolute;
+  inset: 0;
+  background: url('/final.webp') center 70% / cover no-repeat;
+}
+/* 가운데 글자 뒤만 은은하게 밝혀 가독성 확보 */
+.final-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 30% 50% at 50% 55%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 72%);
+}
+.final-content {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 위쪽 월계수 문양 아래부터 시작 */
+  padding: clamp(96px, 24vh, 240px) 16px clamp(24px, 6vh, 64px);
+}
+/* 양옆 아이들 사이 빈 하늘 폭에 맞춤 */
+.final-column { width: 100%; max-width: min(38vw, 34rem); }
+.final-strip { display: none; }
+
+@media (max-aspect-ratio: 6/5) {
+  .final-bg {
+    background-position: center top;
+    filter: blur(28px) saturate(1.1);
+    transform: scale(1.2);
+  }
+  .final-glow { background: linear-gradient(180deg, rgba(240, 246, 255, 0.55), rgba(240, 246, 255, 0.25)); }
+  .final-content { padding: 32px 16px 8px; }
+  .final-column { max-width: 34rem; }
+  .final-strip {
+    display: block;
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    aspect-ratio: 1672 / 941;
+    margin-top: -4%;
+    background: url('/final.webp') center / cover no-repeat;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 22%);
+  }
+}

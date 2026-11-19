@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Shuffle, Mic, Lightbulb } from 'lucide-react';
 import Matching from './pages/Matching';
 import DebateRoom from './pages/DebateRoom';
 
@@ -12,49 +13,52 @@ function App() {
     
       {/* 🏠 홈 화면 */}
       {page === 'home' && (
-        <div className="relative flex flex-col items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat px-4"
-          style={{ 
-            backgroundImage: "url('/bg.webp')", 
-            backgroundAttachment: "fixed" 
-          }}>
-          
-          {/* 배경 어둡게 처리 (글자 가독성 업!) */}
-          <div className="fixed inset-0 bg-black/40 pointer-events-none"></div>
-          
-          {/* 📱 메인 카드: 모바일에선 p-8, PC에선 p-16 */}
-          <div className="w-full max-w-3xl z-10 bg-white/95 backdrop-blur-md rounded-[2.5rem] shadow-2xl p-8 md:p-10 text-center animate-in fade-in zoom-in duration-700">
-            
-            {/* 📱 타이틀: 모바일에선 4xl, PC에선 6xl */}
-            <h1 className="text-3xl md:text-6xl font-black text-slate-800 font-jalnan mb-4 md:mb-8 leading-tight">
-              이빨괴물들의 토론
-            </h1>
-            
-            <p className="text-slate-500 mb-8 md:mb-12 font-medium text-sm md:text-lg">
-              논리로 세상을 구하는 꼬마 철학자들의 시간
-            </p>
+        <div className="home-hero">
+          {/* 배경: 넓은 화면은 전체 배경, 세로 화면은 흐린 배경 + 하단 이미지 띠 (index.css) */}
+          <div className="home-bg" aria-hidden="true"></div>
+          <div className="home-veil" aria-hidden="true"></div>
 
-            {/* 📱 버튼 그룹: 모바일에선 세로로 쌓기(flex-col), PC에선 가로(flex-row) */}
-            <div className="flex flex-col md:flex-row gap-4 justify-center">
-              <button 
-                onClick={() => setPage('matching')}
-                className="w-full md:w-auto px-8 py-5 text-xl md:text-2xl bg-blue-500 text-white rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-600 hover:-translate-y-1 transition-all active:scale-95 font-bold"
-              >
-                🎲 순서 정하기
-              </button>
-              
-              <button 
-                onClick={() => setPage('debate')}
-                className="w-full md:w-auto px-8 py-5 text-xl md:text-2xl bg-green-500 text-white rounded-2xl shadow-lg shadow-green-200 hover:bg-green-600 hover:-translate-y-1 transition-all active:scale-95 font-bold"
-              >
-                🎤 토론 시작하기
-              </button>
+          {/* 메인 카드: 아이들 얼굴을 가리지 않도록 하늘(상단) 영역에 배치 */}
+          <div className="home-content">
+            <div className="w-full max-w-xl text-center rounded-[2rem] bg-white/75 backdrop-blur-xl border border-white/80 ring-1 ring-blue-100/60 shadow-[0_24px_60px_-20px_rgba(37,64,160,0.45)] px-6 md:px-10 py-[clamp(1.25rem,3.5vh,2.25rem)] animate-in fade-in zoom-in duration-700">
+
+              <h1 className="font-jalnan text-slate-800 leading-tight text-[clamp(1.75rem,min(8.5vw,6vh),3.5rem)]">
+                이빨괴물들의 <span className="text-violet-600">토론</span>
+              </h1>
+
+              <p className="mt-2 text-balance text-slate-600 font-medium text-[clamp(0.9rem,2.2vh,1.15rem)]">
+                논리로 세상을 구하는 꼬마 철학자들의 시간
+              </p>
+
+              {/* 버튼: 순서 정하기(보조) / 토론 시작하기(주요) */}
+              <div className="mt-[clamp(1.25rem,3.5vh,2rem)] flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => setPage('matching')}
+                  className="flex items-center justify-center gap-2 h-[clamp(3.25rem,7vh,3.75rem)] px-7 rounded-2xl bg-white/90 text-blue-700 border-2 border-blue-200 font-bold text-lg shadow-sm hover:bg-white hover:border-blue-400 hover:-translate-y-0.5 transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300"
+                >
+                  <Shuffle size={20} strokeWidth={2.5} />
+                  순서 정하기
+                </button>
+
+                <button
+                  onClick={() => setPage('debate')}
+                  className="flex items-center justify-center gap-2 h-[clamp(3.25rem,7vh,3.75rem)] px-8 rounded-2xl bg-linear-to-r from-blue-600 to-violet-600 text-white font-bold text-lg shadow-lg shadow-violet-500/30 hover:from-blue-500 hover:to-violet-500 hover:-translate-y-0.5 transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-300"
+                >
+                  <Mic size={20} strokeWidth={2.5} />
+                  토론 시작하기
+                </button>
+              </div>
+
+              {/* 하단 팁 */}
+              <p className="mt-4 flex items-center justify-center gap-1.5 text-slate-500 text-xs md:text-sm">
+                <Lightbulb size={14} className="text-amber-500 shrink-0" />
+                순서를 먼저 정하면 토론을 바로 불러올 수 있어요!
+              </p>
             </div>
-            
-            {/* 💡 하단 깨알 팁 */}
-            <p className="mt-8 text-slate-400 text-xs md:text-sm">
-              순서를 먼저 정하면 토론을 바로 불러올 수 있어요!
-            </p>
           </div>
+
+          {/* 세로 화면 전용: 아이들이 모두 보이는 이미지 띠 */}
+          <div className="home-strip" aria-hidden="true"></div>
         </div>
       )}
 
