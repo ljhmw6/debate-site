@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Home } from 'lucide-react';
+import { Home, MessageCircle, Minus, Plus, ClipboardCheck, Pencil, Clock, HeartHandshake, Eye, Timer, Droplets, ChevronRight, Lightbulb, SkipForward } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import PageBackground from '../components/PageBackground';
+import { TopBar, SectionTitle, cardClass } from '../components/PageChrome';
 
 const MIN_TIME = 10;  // 발표시간 최소(초)
 const MAX_TIME = 600; // 발표시간 최대(초)
+const INTRO_TIME = 25; // 안내 화면 대기 시간(초)
 const clampTime = (v) => Math.min(MAX_TIME, Math.max(MIN_TIME, Math.round(Number(v) || 0)));
 
 // 순서 정하기에서 저장한 내용 읽기 (없거나 깨졌으면 null)
@@ -81,10 +83,10 @@ function DebateRoom({ onBack }) {
   const [turn, setTurn] = useState(0); 
   const [timeLeft, setTimeLeft] = useState(180); 
   const [isActive, setIsActive] = useState(false);
-  const [introTimer, setIntroTimer] = useState(25);
+  const [introTimer, setIntroTimer] = useState(INTRO_TIME);
   const [debateTime, setDebateTime] = useState(180);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [noSide, setNoSide] = useState(false); // 찬반 없이 토론하기
+  const [noSide, setNoSide] = useState(false); // 자유 토론(팀 없이 각자 찬반 의견)
 
   const roundNames = ["나의 주장", "궁금한점 또는 반론", "최종 정리"]; 
 
@@ -256,8 +258,10 @@ function DebateRoom({ onBack }) {
   if (step === 'input') {
     const timeValid = timeLeft !== "" && Number(timeLeft) >= MIN_TIME && Number(timeLeft) <= MAX_TIME;
     const canStart = topic && participants.every(p => p.name.trim() !== "") && timeValid;
+    const totalMin = Math.ceil((participants.length * 3 * (Number(timeLeft) || 0)) / 60);
+    const presets = [60, 120, 180, 300];
     return (
-      <div className='relative min-h-screen flex items-center justify-center p-4 py-6 md:py-10'>
+      <div className='relative min-h-screen flex flex-col items-center px-4 py-5 md:py-8'>
         <PageBackground variant="soft" />
 
         {/* 💾 지난번에 정한 순서 불러오기 안내창 */}
@@ -274,7 +278,7 @@ function DebateRoom({ onBack }) {
                 </div>
                 <div>
                   <span className="text-xs font-bold text-slate-400">
-                    발표자 {savedData.results.length}명 · {savedData.noSide ? "찬반 없이" : "찬반 토론"}
+                    발표자 {savedData.results.length}명 · {savedData.noSide ? "자유 토론" : "팀 토론"}
                   </span>
                   <div className="flex flex-wrap gap-2 mt-1 max-h-40 overflow-y-auto">
                     {savedData.results.map((p, i) => (
@@ -301,74 +305,116 @@ function DebateRoom({ onBack }) {
             </div>
           </div>
         )}
-        
-        {/* 📱 p-6 md:p-10 모바일 여백 조절 */}
-        <div className="p-6 md:p-10 z-10 w-full max-w-3xl bg-white/90 backdrop-blur-xl border border-white/80 ring-1 ring-blue-100/60 shadow-[0_24px_60px_-20px_rgba(30,58,138,0.5)] rounded-[2rem] relative">
-          <header className="flex justify-between items-center mb-6 md:mb-8">
-            <h2 className="text-2xl md:text-3xl text-slate-800 font-jalnan">🎤 토론 설정</h2>
-            <button onClick={handleGoHome} title="홈으로 가기" aria-label="홈으로 가기" className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white/90 text-slate-600 border border-slate-200 hover:text-blue-600 hover:border-blue-300 rounded-2xl shadow-sm transition-all active:scale-90"><Home size={22} strokeWidth={2.25} /></button>
+
+        <TopBar onHome={handleGoHome} step={2} />
+
+        <div className={cardClass}>
+          <header className="mb-6 md:mb-8">
+            <h1 className="font-jalnan text-slate-800 text-3xl md:text-4xl leading-tight">토론 설정 🎤</h1>
+            <p className="mt-2 text-slate-500 text-sm md:text-base break-keep">주제와 발표자, 발표시간을 확인하고 토론을 시작해요.</p>
           </header>
-          
-          <div className="space-y-6 md:space-y-8"> 
+
+          {isLoaded && (
+            <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3">
+              <p className="flex items-center gap-2 text-emerald-800 text-sm md:text-base font-bold break-keep">
+                <ClipboardCheck size={18} className="shrink-0" /> 순서 정하기에서 불러온 내용이에요
+              </p>
+              <button onClick={() => setIsLoaded(false)} className="shrink-0 flex items-center gap-1 rounded-full bg-white border border-emerald-200 px-3 py-1 text-xs md:text-sm font-bold text-emerald-700 hover:bg-emerald-100 transition-colors">
+                <Pencil size={13} /> 수정
+              </button>
+            </div>
+          )}
+
+          <div className="space-y-6 md:space-y-8">
+            {/* 1. 오늘의 주제 */}
             <section>
-              <label className="block text-lg md:text-xl font-bold text-slate-700 mb-2 ml-1">오늘의 주제</label>
+              <div className="mb-2.5"><SectionTitle n={1}>오늘의 주제</SectionTitle></div>
               {isLoaded ? (
-                <div className="group relative py-2"> 
-                  <p className="text-xl md:text-3xl font-black text-violet-700 font-jalnan break-keep">
-                    {topic}
-                  </p> 
-                  <button onClick={() => setIsLoaded(false)} className="absolute -top-8 -right-2 bg-white border border-slate-200 rounded-full px-2 py-1 text-xs shadow-sm hover:bg-slate-50">✏️ 수정</button>
-                </div>
-              ) : ( 
-                <input className="w-full p-3 md:p-4 border-2 border-blue-100 rounded-2xl text-sm md:text-xl font-bold bg-white/90 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 placeholder:text-slate-400 outline-none transition-all"value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="주제를 입력해 주세요!" />
+                <p className="rounded-2xl bg-violet-50/70 border border-violet-100 px-4 py-3.5 font-jalnan text-violet-700 text-xl md:text-2xl leading-snug break-keep">{topic}</p>
+              ) : (
+                <input className="w-full p-3.5 md:p-4 border-2 border-blue-100 rounded-2xl text-base md:text-xl font-bold bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 placeholder:text-slate-400 placeholder:font-medium outline-none transition-all" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="주제를 입력해 주세요!" />
               )}
             </section>
- 
+
+            {/* 2. 발표자 */}
             <section>
-              <div className="flex justify-between items-center mb-4">
-                <label className="text-lg md:text-xl font-bold text-slate-700 ml-1">발표자 ({participants.length}명)</label>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                <SectionTitle n={2}>
+                  발표자
+                  <span className="font-sans text-sm font-bold text-slate-400 tabular-nums">{participants.length}명</span>
+                </SectionTitle>
                 {!isLoaded && (
-                  <div className="flex gap-1.5 md:gap-2">
-                    <button onClick={() => setNoSide(!noSide)} className={`px-2.5 py-1.5 rounded-xl text-xs md:text-sm font-bold border-2 transition-all active:scale-95 ${noSide ? "bg-violet-600 border-violet-600 text-white" : "bg-white/90 border-violet-200 text-violet-700 hover:bg-violet-50"}`}>{noSide ? "✅" : "⬜"} 찬반 없이</button>
-                    <button onClick={() => adjustParticipants(-1)} className="px-2.5 py-1.5 bg-white/90 border-2 border-slate-200 text-slate-600 rounded-xl text-xs md:text-sm font-bold hover:border-slate-300 transition-all active:scale-95">- 2명</button>
-                    <button onClick={() => adjustParticipants(1)} className="px-2.5 py-1.5 bg-blue-600 border-2 border-blue-600 text-white rounded-xl text-xs md:text-sm font-bold hover:bg-blue-500 transition-all active:scale-95">+ 2명</button>
+                  <div className="flex items-center gap-2">
+                    <div className="flex rounded-full bg-slate-100 p-0.5 text-xs md:text-sm font-bold" role="radiogroup" aria-label="토론 방식">
+                      <button type="button" role="radio" aria-checked={!noSide} onClick={() => setNoSide(false)}
+                        className={`px-3 py-1.5 rounded-full transition-all ${!noSide ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500'}`}>팀 토론</button>
+                      <button type="button" role="radio" aria-checked={noSide} onClick={() => setNoSide(true)}
+                        className={`px-3 py-1.5 rounded-full transition-all ${noSide ? 'bg-white shadow-sm text-violet-700' : 'text-slate-500'}`}>자유 토론</button>
+                    </div>
+                    <div className="flex items-center rounded-full bg-white border-2 border-slate-200 p-0.5">
+                      <button onClick={() => adjustParticipants(-1)} disabled={participants.length <= 2} aria-label="2명 빼기"
+                        className="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 transition-all active:scale-90"><Minus size={15} strokeWidth={2.5} /></button>
+                      <button onClick={() => adjustParticipants(1)} disabled={participants.length >= 10} aria-label="2명 더하기"
+                        className="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-30 transition-all active:scale-90"><Plus size={15} strokeWidth={2.5} /></button>
+                    </div>
                   </div>
                 )}
-              </div>              
-              {/* 📱 모바일에선 1열, PC에선 2열 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-6 md:gap-y-2 md:max-h-none overflow-y-auto pr-1">
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 md:gap-3">
                 {participants.map((p, i) => (
-                  <div key={i} className={`p-3 rounded-2xl border-2 flex items-center gap-2 md:gap-3 bg-white/90 transition-all focus-within:ring-4 ${noSide ? 'border-violet-100 focus-within:ring-violet-100' : (i % 2 === 0 ? 'border-blue-100 focus-within:ring-blue-100' : 'border-red-100 focus-within:ring-red-100')}`}>
-                    <span className={`w-8 h-6 md:w-11 md:h-8 rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm shrink-0 ${noSide ? 'bg-violet-500' : (i % 2 === 0 ? 'bg-blue-500' : 'bg-red-500')}`}>{p.turn}</span>
+                  <label key={i} className={`flex items-center gap-2 rounded-2xl border-2 pl-2 pr-3 transition-all focus-within:ring-4 ${isLoaded ? 'bg-slate-50/80' : 'bg-white'} ${noSide ? 'border-violet-100 focus-within:ring-violet-100' : (i % 2 === 0 ? 'border-blue-100 focus-within:ring-blue-100' : 'border-red-100 focus-within:ring-red-100')}`}>
+                    <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 ${noSide ? 'bg-violet-500' : (i % 2 === 0 ? 'bg-blue-500' : 'bg-red-500')}`}>{p.turn}</span>
                     {!noSide && (
-                      <span className={`text-[10px] md:text-xs font-black px-1.5 py-1 rounded-lg shrink-0 ${i % 2 === 0 ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`}>
+                      <span className={`text-[11px] md:text-xs font-black px-1.5 py-1 rounded-lg shrink-0 ${i % 2 === 0 ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`}>
                         {i % 2 === 0 ? '찬성' : '반대'}
                       </span>
                     )}
-                    <input className="w-full bg-transparent font-bold outline-none text-2sm md:text-2xl" value={p.name} placeholder="이름" readOnly={isLoaded} maxLength={9} onChange={(e) => {
+                    <input className="w-full py-3 bg-transparent font-bold text-slate-800 outline-none text-base md:text-xl placeholder:text-slate-300" value={p.name} placeholder="이름" readOnly={isLoaded} maxLength={9} onChange={(e) => {
                         const newP = [...participants];
                         newP[i].name = e.target.value;
                         setParticipants(newP);
                     }} />
-                  </div>
+                  </label>
                 ))}
               </div>
             </section>
-  
-            <section className="rounded-2xl"> 
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-slate-700 font-bold text-base md:text-xl">발표시간</span>
-                <input type="number" min={MIN_TIME} max={MAX_TIME} step={10} className={`w-16 md:w-24 p-1.5 border-2 rounded-xl text-center text-sm md:text-xl font-bold bg-white/90 outline-none focus:ring-4 transition-all ${timeValid ? "border-blue-200 focus:border-blue-400 focus:ring-blue-100" : "border-red-500 focus:ring-red-100"}`} value={timeLeft} onChange={(e) => setTimeLeft(e.target.value === "" ? "" : Number(e.target.value))} onBlur={() => setTimeLeft(clampTime(timeLeft))} />
-                <span className="text-slate-400 font-bold text-sm md:text-lg">초 ({Math.floor((Number(timeLeft) || 0) / 60)}분 {(Number(timeLeft) || 0) % 60}초)</span>
+
+            {/* 3. 발표시간 */}
+            <section>
+              <div className="flex items-baseline gap-2 mb-2.5">
+                <SectionTitle n={3}>발표시간</SectionTitle>
+                <span className="text-xs md:text-sm font-bold text-slate-400">한 사람이 한 단계에서 말하는 시간</span>
               </div>
-              {!timeValid && (
+              <div className="flex flex-wrap items-center gap-2">
+                {presets.map((s) => (
+                  <button key={s} type="button" onClick={() => setTimeLeft(s)}
+                    className={`px-3.5 md:px-4 py-2 rounded-xl text-sm md:text-base font-bold border-2 transition-all active:scale-95 ${Number(timeLeft) === s ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/25' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
+                    {s / 60}분
+                  </button>
+                ))}
+                <div className="flex items-center gap-2 sm:ml-2">
+                  <span className="text-slate-400 text-sm font-bold">직접</span>
+                  <input type="number" min={MIN_TIME} max={MAX_TIME} step={10} aria-label="발표시간(초)" className={`w-20 md:w-24 py-1.5 px-2 border-2 rounded-xl text-center text-base md:text-xl font-bold bg-white outline-none focus:ring-4 transition-all ${timeValid ? "border-blue-200 focus:border-blue-400 focus:ring-blue-100" : "border-red-500 focus:ring-red-100"}`} value={timeLeft} onChange={(e) => setTimeLeft(e.target.value === "" ? "" : Number(e.target.value))} onBlur={() => setTimeLeft(clampTime(timeLeft))} />
+                  <span className="text-slate-500 font-bold text-sm md:text-base whitespace-nowrap">초 ({Math.floor((Number(timeLeft) || 0) / 60)}분 {(Number(timeLeft) || 0) % 60}초)</span>
+                </div>
+              </div>
+              {!timeValid ? (
                 <p className="mt-2 ml-1 text-red-500 text-xs md:text-sm font-bold">발표시간은 {MIN_TIME}초~{MAX_TIME / 60}분 사이로 입력해 주세요.</p>
+              ) : (
+                <p className="mt-3 flex items-center gap-1.5 text-slate-500 text-xs md:text-sm">
+                  <Clock size={14} className="shrink-0" /> 전체 예상 시간: 약 <b className="text-slate-700">{totalMin}분</b> ({participants.length}명 × 3단계)
+                </p>
               )}
             </section>
-            
-            <button onClick={startDebate} className={`w-full py-4 md:py-5 text-white text-xl md:text-2xl font-bold rounded-2xl transition-all ${canStart ? "bg-linear-to-r from-blue-600 to-violet-600 shadow-xl shadow-violet-500/30 hover:from-blue-500 hover:to-violet-500 hover:-translate-y-0.5 active:scale-[0.98]" : "bg-slate-300 cursor-not-allowed"}`} disabled={!canStart}>
-              토론 시작하기 🚀
-            </button>
+
+            <div>
+              <button onClick={startDebate} className={`w-full py-4 md:py-5 text-white text-xl md:text-2xl font-jalnan rounded-2xl transition-all ${canStart ? "bg-linear-to-r from-blue-600 to-violet-600 shadow-xl shadow-violet-500/30 hover:from-blue-500 hover:to-violet-500 hover:-translate-y-0.5 active:scale-[0.98]" : "bg-slate-300 cursor-not-allowed"}`} disabled={!canStart}>
+                토론 시작하기 🚀
+              </button>
+              {!canStart && (
+                <p className="mt-2.5 text-center text-xs md:text-sm text-slate-400">주제와 발표자 이름, 발표시간을 모두 채우면 시작할 수 있어요</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -379,39 +425,93 @@ function DebateRoom({ onBack }) {
   if (step === 'intro') {
     const displayMin = Math.floor(debateTime / 60);
     const displaySec = debateTime % 60;
-    const timeString = displayMin > 0 
-      ? `${displayMin}분 ${displaySec > 0 ? displaySec + '초' : ''}` 
+    const timeString = displayMin > 0
+      ? `${displayMin}분 ${displaySec > 0 ? displaySec + '초' : ''}`
       : `${displaySec}초`;
+    const rules = [
+      { icon: <MessageCircle size={20} strokeWidth={2.25} />, text: <>토론 시에는 <b className="text-slate-900">차분하고 예의 있는 존댓말</b>로 말해주세요.</> },
+      { icon: <HeartHandshake size={20} strokeWidth={2.25} />, text: <>상대방의 의견을 <b className="text-slate-900">무시하거나 비방하는 말</b>은 자제해주세요.</> },
+      { icon: <Eye size={20} strokeWidth={2.25} />, text: <>내 순서가 아니더라도 화면을 보며 <b className="text-slate-900">친구의 의견에 반응</b>해 주세요.</> },
+      { icon: <Timer size={20} strokeWidth={2.25} />, text: <><b className="text-blue-600">{timeString}</b>이 지나면 다음 친구에게 차례가 넘어갑니다.</> },
+    ];
+    const ringR = 26;
+    const ringC = 2 * Math.PI * ringR;
+    const ringPct = Math.max(0, Math.min(1, introTimer / INTRO_TIME));
     return (
-      <div className="relative min-h-screen flex flex-col items-center justify-center p-6 md:p-10 text-center overflow-y-auto">
+      <div className="relative min-h-screen flex flex-col items-center justify-center px-4 py-8 md:p-10 text-center overflow-y-auto">
         <PageBackground variant="focus" />
-        <div className="relative z-10 w-full flex flex-col items-center space-y-6 md:space-y-10">
-        <h1 className="text-xl md:text-4xl text-slate-500 font-jalnan">오늘의 주제
-            <p className="text-violet-700 text-lg md:text-3xl mt-2 font-black break-keep px-4">{topic}</p>
-        </h1>
-        <div className="bg-white/80 backdrop-blur-xl p-6 md:p-10 rounded-[2rem] border border-white ring-1 ring-blue-100 shadow-[0_24px_60px_-24px_rgba(30,58,138,0.35)] text-left w-full max-w-3xl relative">
-          <h3 className="text-xl md:text-3xl font-bold mb-4 md:mb-6 text-slate-800 font-jalnan">토론 시 주의 사항</h3>
-          <ul className="space-y-3 md:space-y-4 text-base md:text-xl text-slate-700 font-medium list-disc ml-4 md:ml-6">            
-            <li>토론 시에는 차분하고 예의 있는 존댓말로 말해주세요.</li>
-            <li>상대방의 의견을 무시하거나 비방하는 말은 자제해주세요.</li>
-            <li>각 나의 주장 <span className="text-blue-600 font-bold">{timeString}</span>, 궁금한점&반론 <span className="text-blue-600 font-bold">{timeString}</span>, 최종 정리 <span className="text-blue-600 font-bold">
-            {timeString}</span>씩 주어집니다.</li>
-            <li>내 순서가 아니더라도 화면을 보며 친구의 의견에 반응해 주세요.</li>
-            <li>{timeString}이 지나면 다음 친구에게 차례가 넘어갑니다.</li>
-          </ul> 
-          <div className="mt-8 md:absolute md:-right-20 md:-bottom-10 bg-sky-50 border-2 border-sky-300 shadow-lg shadow-sky-500/20 p-4 md:p-6 rounded-3xl md:rounded-full md:w-44 md:h-44 flex items-center justify-center text-center text-sm md:text-lg font-bold text-blue-800 animate-pulse"> 
-            목소리가 커지면<br className="hidden md:block" /> 물을 마시고<br/> 심호흡을 해요!
+        <div className="relative z-10 w-full max-w-4xl flex flex-col items-center gap-5 md:gap-7">
+
+          {/* 오늘의 주제 */}
+          <div className="flex flex-col items-center gap-3">
+            <span className="px-4 py-1.5 rounded-full bg-white/80 border border-white text-slate-600 text-sm md:text-base font-bold shadow-sm">📣 오늘의 토론 주제</span>
+            <h1 className="font-jalnan text-slate-800 leading-tight text-balance break-keep text-[clamp(1.75rem,4.5vw,3.25rem)] px-2">
+              {topic}
+            </h1>
           </div>
-        </div>
-        <div className="space-y-4">
-           <p className="text-lg md:text-2xl font-medium px-4">
-            첫 번째 발표자 <br className="md:hidden" />{!noSide && <span className="text-blue-600 font-black">찬성측</span>} 
-            <span className="text-green-600 font-black"> {participants[0]?.name}</span> 친구부터 시작합니다!
-          </p>
-          <div className="text-slate-500 font-bold bg-white/80 border border-slate-200 py-2 px-6 rounded-full inline-block text-sm tabular-nums">
-            {Math.floor(introTimer / 60)}분 {introTimer % 60}초 후 자동 시작
+
+          {/* 진행 순서: 3단계 */}
+          <ol className="w-full max-w-3xl grid grid-cols-3 gap-2 md:gap-4">
+            {roundNames.map((r, i) => (
+              <li key={r} className="relative flex flex-col items-center gap-1 md:gap-1.5 rounded-2xl md:rounded-3xl bg-white/75 backdrop-blur border border-white px-2 py-3 md:p-4 shadow-[0_12px_30px_-18px_rgba(30,58,138,0.45)]">
+                <span className="w-7 h-7 md:w-9 md:h-9 rounded-full bg-linear-to-br from-blue-500 to-violet-600 text-white font-jalnan flex items-center justify-center text-sm md:text-lg shadow-md shadow-violet-500/30">{i + 1}</span>
+                <span className="font-bold text-slate-800 text-[13px] md:text-lg leading-tight break-keep">{r}</span>
+                <span className="text-blue-600 font-bold text-xs md:text-base tabular-nums">{timeString}</span>
+                {i < 2 && <ChevronRight className="hidden md:block absolute -right-[1.1rem] top-1/2 -translate-y-1/2 text-blue-300" size={22} strokeWidth={3} />}
+              </li>
+            ))}
+          </ol>
+
+          {/* 토론 시 주의 사항 */}
+          <section className="w-full max-w-3xl text-left rounded-[2rem] bg-white/80 backdrop-blur-xl border border-white ring-1 ring-blue-100 shadow-[0_24px_60px_-24px_rgba(30,58,138,0.35)] p-5 md:p-8">
+            <h2 className="font-jalnan text-slate-800 text-xl md:text-2xl mb-4 md:mb-5">토론 시 주의 사항</h2>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2.5 md:gap-3">
+              {rules.map(({ icon, text }, i) => (
+                <li key={i} className="flex items-start gap-3 rounded-2xl bg-blue-50/70 border border-blue-100/70 p-3 md:p-4">
+                  <span className="shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white text-blue-600 flex items-center justify-center shadow-sm">{icon}</span>
+                  <span className="text-slate-600 text-[15px] md:text-lg leading-snug break-keep pt-1.5 md:pt-1">{text}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3 md:mt-4 flex items-center gap-3 rounded-2xl bg-linear-to-r from-sky-100 to-cyan-50 border border-sky-200 p-3 md:p-4">
+              <span className="shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white text-sky-500 flex items-center justify-center shadow-sm"><Droplets size={20} strokeWidth={2.25} /></span>
+              <span className="text-sky-900 font-bold text-[15px] md:text-lg break-keep">목소리가 커지면 물을 마시고 심호흡을 해요!</span>
+            </div>
+          </section>
+
+          {/* 첫 발표자 + 자동 시작 카운트다운 */}
+          <div className="flex items-center gap-3 md:gap-5 rounded-3xl md:rounded-full bg-white/85 backdrop-blur border border-white shadow-[0_16px_40px_-20px_rgba(30,58,138,0.45)] pl-2 pr-5 md:pr-8 py-2">
+            <div className="relative shrink-0 w-16 h-16" role="timer" aria-label={`${introTimer}초 후 자동 시작`}>
+              <svg viewBox="0 0 64 64" className="w-full h-full -rotate-90">
+                <circle cx="32" cy="32" r={ringR} fill="none" stroke="#e0e7ff" strokeWidth="6" />
+                <circle cx="32" cy="32" r={ringR} fill="none" stroke="url(#introRing)" strokeWidth="6" strokeLinecap="round"
+                  strokeDasharray={ringC} strokeDashoffset={ringC * (1 - ringPct)} className="transition-[stroke-dashoffset] duration-1000 ease-linear" />
+                <defs>
+                  <linearGradient id="introRing" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" /><stop offset="100%" stopColor="#8b5cf6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center timer-font text-xl text-slate-800">{introTimer}</span>
+            </div>
+            <div className="text-left">
+              <p className="text-xs md:text-sm font-bold text-slate-400">{introTimer}초 후 자동 시작</p>
+              <p className="text-base md:text-xl font-bold text-slate-700 break-keep">
+                첫 번째 발표자 {!noSide && <span className="text-blue-600 font-black">찬성측</span>}
+                <span className="text-green-600 font-black"> {participants[0]?.name}</span> 친구부터 시작합니다!
+              </p>
+            </div>
           </div>
-        </div>
+
+          {/* 발표 순서 */}
+          <div className="flex flex-wrap justify-center gap-1.5 md:gap-2 max-w-3xl">
+            {participants.map((p, i) => (
+              <span key={i} className="flex items-center gap-1.5 bg-white/70 border border-white rounded-full pl-1 pr-3 py-1 text-sm font-bold text-slate-700">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs ${noSide ? 'bg-violet-500' : (i % 2 === 0 ? 'bg-blue-500' : 'bg-red-500')}`}>{i + 1}</span>
+                {p.name}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -425,67 +525,107 @@ function DebateRoom({ onBack }) {
     const nextP = participants[nextIdx];
     const isLastSpeakerOfRound = turn === participants.length - 1;
 
+    const team = noSide
+      ? { glow: 'from-violet-300/45', badge: 'bg-violet-600' }
+      : isChan
+        ? { glow: 'from-blue-300/50', badge: 'bg-blue-600' }
+        : { glow: 'from-red-300/45', badge: 'bg-red-500' };
+    const urgent = timeLeft <= 3;
+    const warn = timeLeft <= 9;
+    const pct = debateTime > 0 ? Math.max(0, Math.min(100, (timeLeft / debateTime) * 100)) : 0;
+
     return (
-      <div className="h-screen h-svh flex flex-col items-center justify-center py-10 px-6 text-center overflow-hidden relative">
+      <div className="h-screen h-svh relative overflow-hidden flex flex-col px-4 md:px-8 py-4 md:py-6 text-center">
         <PageBackground variant="focus" />
-        <div className="space-y-4 md:space-y-6 relative z-10 w-full">
-          <p className="inline-block max-w-full px-4 py-1.5 md:px-6 md:py-2 rounded-full bg-white/70 border border-violet-100 text-violet-700 text-sm md:text-2xl font-black font-jalnan break-keep">{topic}</p>
-          <h2 className={`text-3xl md:text-5xl font-jalnan font-black transition-colors ${noSide ? "text-slate-700" : isChan ? "text-blue-600" : "text-red-600"}`}>
-            {!noSide && (isChan ? "찬성측" : "반대측")} <span className="text-green-600">{currentP?.name}</span> 
-            <div className="text-4xl md:text-7xl mt-2 md:mt-5 text-slate-600">
-              {roundNames[round]}
+        {/* 발표 팀 색으로 은은한 빛 */}
+        <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-2/3 bg-linear-to-b ${team.glow} to-transparent pointer-events-none`}></div>
+
+        {/* 상단: 주제 + 단계 */}
+        <header className="relative z-10 shrink-0 flex flex-col md:flex-row items-center justify-between gap-2.5 md:gap-4">
+          <p className="max-w-full md:max-w-[55%] px-4 py-1.5 md:py-2 rounded-2xl md:rounded-full bg-white/75 backdrop-blur border border-white text-violet-700 font-jalnan text-sm md:text-xl leading-snug break-keep line-clamp-2 md:text-left shadow-sm">
+            💬 {topic}
+          </p>
+          <ol className="flex items-center gap-1 md:gap-1.5 shrink-0">
+            {roundNames.map((r, i) => (
+              <li key={r} className={`flex items-center gap-1.5 rounded-full border px-2.5 md:px-3.5 py-1 md:py-1.5 text-xs md:text-sm font-bold transition-all ${
+                i === round ? 'bg-slate-800 border-slate-800 text-white shadow-md'
+                : i < round ? 'bg-white/60 border-white text-slate-400'
+                : 'bg-white/40 border-white/70 text-slate-500'}`}>
+                <span className="tabular-nums">{i < round ? '✓' : i + 1}</span>
+                <span className={i === round ? '' : 'hidden md:inline'}>{r}</span>
+              </li>
+            ))}
+          </ol>
+        </header>
+
+        {/* 가운데: 발표자 + 안내 + 타이머 */}
+        <main className="relative z-10 flex-1 min-h-0 flex flex-col items-center justify-center gap-[clamp(0.5rem,2vh,1.25rem)]">
+          <div className="flex flex-col items-center gap-[clamp(0.25rem,1.2vh,0.75rem)]">
+            <div className="flex items-center justify-center gap-2.5 md:gap-3 flex-wrap">
+              {!noSide && (
+                <span className={`px-3 md:px-4 py-1 rounded-full text-white font-jalnan text-lg md:text-2xl shadow-md ${team.badge}`}>
+                  {isChan ? "찬성측" : "반대측"}
+                </span>
+              )}
+              <span className="font-jalnan text-green-600 leading-none text-[clamp(2rem,6vh,4rem)]">{currentP?.name}</span>
             </div>
-          </h2> 
+            <h2 className="font-jalnan text-slate-700 leading-none text-[clamp(2.25rem,8vh,5.5rem)]">
+              {roundNames[round]}
+            </h2>
+          </div>
 
-          <div className="bg-amber-50/90 border border-amber-100 p-3 md:p-4 md:px-6 rounded-2xl inline-block max-w-7xl shadow-sm mx-4">
-          <p className="text-xl md:text-2xl text-slate-700 font-bold leading-snug break-keep">
-            {round === 0 && (
-              noSide
-                ? <>나의 생각과 <span className="text-orange-600">이유와 근거</span>를 <br className="md:hidden" /><span className="text-orange-600">1~3가지</span> 이야기 해주세요</>
-                : <>{isChan ? '찬성' : '반대'}하는 <span className="text-orange-600">이유와 근거</span>를 <br className="md:hidden" /><span className="text-orange-600">1~3가지</span> 이야기 해주세요</>
-            )}
-            {round === 1 && (
-              <>친구의 말에서 <span className="text-orange-500">궁금한 거나, <br className="md:hidden" />생각이 다른 부분</span>을 말해보세요</>
-            )}
-            {round === 2 && (
-              <>토론한 내용을 바탕으로 <br className="md:hidden" /><span className="text-orange-600">내 생각을 마지막으로 <br className="md:hidden" />정리</span>해주세요</>
-            )}
-          </p>
-        </div>
+          <div className="flex items-start gap-2.5 bg-amber-50/90 border border-amber-200/80 rounded-2xl px-4 md:px-6 py-2.5 md:py-3 shadow-sm max-w-3xl">
+            <Lightbulb className="shrink-0 text-amber-500 mt-0.5 md:mt-1" size={22} strokeWidth={2.25} />
+            <p className="text-slate-700 font-bold leading-snug break-keep text-left text-[clamp(1rem,2.6vh,1.6rem)]">
+              {round === 0 && (
+                noSide
+                  ? <><span className="text-orange-600">찬성인지 반대인지</span> 내 생각을 먼저 말하고,<br /><span className="text-orange-600">이유와 근거</span>를 <span className="text-orange-600">1~3가지</span> 이야기 해주세요</>
+                  : <>{isChan ? '찬성' : '반대'}하는 <span className="text-orange-600">이유와 근거</span>를 <br className="md:hidden" /><span className="text-orange-600">1~3가지</span> 이야기 해주세요</>
+              )}
+              {round === 1 && (
+                <>친구의 말에서 <span className="text-orange-500">궁금한 거나, <br className="md:hidden" />생각이 다른 부분</span>을 말해보세요</>
+              )}
+              {round === 2 && (
+                <>토론한 내용을 바탕으로 <br className="md:hidden" /><span className="text-orange-600">내 생각을 마지막으로 <br className="md:hidden" />정리</span>해주세요</>
+              )}
+            </p>
+          </div>
 
-        </div>
-   
-        {/* 📱 타이머 크기 핵심! 모바일에선 text-7xl, PC에선 17rem */}
-        <div className={`relative z-10 text-9xl sm:text-[10rem] md:text-[15rem] lg:text-[17rem] mt-6 md:mt-10 mb-4 md:mb-7 font-black tabular-nums timer-font tracking-tighter leading-none select-none transition-colors 
-            ${timeLeft <= 3 ? "text-red-600 animate-pulse" : timeLeft <= 9 ? "text-orange-500" : "text-slate-800"}`}
-        >
-          {formatTime(timeLeft)}
-        </div> 
+          {/* 타이머: 화면 높이에 맞춰 크기 조절 */}
+          <div className={`timer-font tabular-nums tracking-tighter leading-none select-none transition-colors text-[min(30vw,27vh)] ${urgent ? "text-red-600 animate-pulse" : warn ? "text-orange-500" : "text-slate-800"}`}>
+            {formatTime(timeLeft)}
+          </div>
 
-        <div className="relative z-10 w-full max-w-6xl px-4">
+          {/* 남은 시간 막대 */}
+          <div className="w-full max-w-4xl h-2.5 md:h-3.5 rounded-full bg-white/70 ring-1 ring-white overflow-hidden shadow-inner"
+            role="progressbar" aria-valuemin={0} aria-valuemax={debateTime} aria-valuenow={timeLeft} aria-label="남은 발표 시간">
+            <div className={`h-full rounded-full transition-[width] duration-1000 ease-linear ${urgent ? "bg-red-500" : warn ? "bg-orange-400" : "bg-linear-to-r from-blue-500 to-violet-500"}`}
+              style={{ width: `${pct}%` }}></div>
+          </div>
+        </main>
+
+        {/* 하단: 다음 순서 + 건너뛰기 */}
+        <footer className="relative z-10 shrink-0 flex flex-col items-center gap-3 md:gap-4">
           {round === 2 && isLastSpeakerOfRound ? (
-            <p className="text-2xl md:text-3xl text-orange-600 font-black animate-bounce font-jalnan mt-5">마무리할 시간이에요! ✨</p>
-          ) : ( 
-            <p className="text-lg md:text-2xl text-slate-600 font-bold leading-snug  mt-3 md:mt-0">
-            다음 순서는 
-            {!noSide && (
-              <span className={ (nextIdx % 2 === 0) ? "text-blue-600 ml-2" : "text-red-600 ml-2" }>
-                {(nextIdx % 2 === 0) ? "찬성측" : "반대측"}
-              </span>
-            )}
-            <span className="text-green-600 font-black mx-2">
-              {nextP?.name}
-            </span> 
-            친구의 <br className="md:hidden" />
-            <span className="text-violet-600 ml-1">
-              {isLastSpeakerOfRound ? roundNames[round + 1] : roundNames[round]}
-            </span> 시간입니다. <br className="md:hidden" />준비해 주세요.
-          </p>
+            <p className="text-2xl md:text-3xl text-orange-600 font-black animate-bounce font-jalnan">마무리할 시간이에요! ✨</p>
+          ) : (
+            <div className="inline-flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 rounded-2xl md:rounded-full bg-white/75 backdrop-blur border border-white shadow-sm px-4 md:px-6 py-2.5 text-base md:text-xl font-bold text-slate-600 break-keep">
+              <span className="mr-1 px-2.5 py-0.5 rounded-full bg-slate-800 text-white text-xs md:text-sm">다음 순서</span>
+              {!noSide && (
+                <span className={(nextIdx % 2 === 0) ? "text-blue-600" : "text-red-600"}>
+                  {(nextIdx % 2 === 0) ? "찬성측" : "반대측"}
+                </span>
+              )}
+              <span className="text-green-600 font-black">{nextP?.name}</span>
+              <span>친구의</span>
+              <span className="text-violet-600">{isLastSpeakerOfRound ? roundNames[round + 1] : roundNames[round]}</span>
+              <span>시간입니다. 준비해 주세요.</span>
+            </div>
           )}
-        </div>
-        
-        {/* 📱 모바일용 다음 버튼 (작게 배치) */}
-        <button onClick={handleNext} className="relative z-10 mt-8 px-6 py-2 bg-white/70 border border-slate-200 text-slate-500 hover:text-slate-700 rounded-full text-xs font-bold transition-colors">건너뛰기</button>
+          <button onClick={handleNext} className="flex items-center gap-1 px-4 py-1.5 bg-white/60 border border-white text-slate-500 hover:text-slate-800 hover:bg-white/90 rounded-full text-xs md:text-sm font-bold transition-colors">
+            건너뛰기 <SkipForward size={14} />
+          </button>
+        </footer>
       </div>
     );
   }
