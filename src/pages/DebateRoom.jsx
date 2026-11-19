@@ -1,4 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+
+const MIN_TIME = 10;  // 발표시간 최소(초)
+const MAX_TIME = 600; // 발표시간 최대(초)
+const clampTime = (v) => Math.min(MAX_TIME, Math.max(MIN_TIME, Math.round(Number(v) || 0)));
+
+// 순서 정하기에서 저장한 내용 읽기 (없거나 깨졌으면 null)
+const readSaved = () => {
+  try {
+    const topic = localStorage.getItem('next_debate_topic');
+    const results = JSON.parse(localStorage.getItem('next_debate_results') || 'null');
+    if (!topic || !Array.isArray(results) || results.length === 0) return null;
+    return { topic, results, noSide: localStorage.getItem('next_debate_noside') === 'true' };
+  } catch {
+    return null;
+  }
+};
 
 // 오디오 객체 (유지) 
 const alertSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
@@ -56,7 +72,7 @@ function DebateRoom({ onBack }) {
     { name: "", turn: 3, team: "찬성측", color: "bg-blue-500" },
     { name: "", turn: 4, team: "반대측", color: "bg-red-500" },
   ]);
-  const hasConfirmed = useRef(false);
+  const [savedData, setSavedData] = useState(readSaved); // 불러오기 안내창용
   const [step, setStep] = useState('input');
   const [round, setRound] = useState(0); 
   const [turn, setTurn] = useState(0); 
@@ -115,22 +131,13 @@ function DebateRoom({ onBack }) {
     return () => clearInterval(timer);
   }, [isActive, timeLeft]);
  
-  useEffect(() => {
-    const savedTopic = localStorage.getItem('next_debate_topic');
-    const savedResults = localStorage.getItem('next_debate_results');
-    if (savedTopic && savedResults && !hasConfirmed.current) {
-      if (window.confirm("내용을 불러올까요?")) {
-        setTopic(savedTopic);
-        setParticipants(JSON.parse(savedResults));
-        setNoSide(localStorage.getItem('next_debate_noside') === 'true');
-        setIsLoaded(true);
-        hasConfirmed.current = true;
-      } else {
-        setIsLoaded(false);
-        hasConfirmed.current = true;
-      }
-    }
-  }, []);
+  const loadSaved = () => {
+    setTopic(savedData.topic);
+    setParticipants(savedData.results);
+    setNoSide(savedData.noSide);
+    setIsLoaded(true);
+    setSavedData(null);
+  };
 
   const adjustParticipants = (amount) => {
     if (amount > 0 && participants.length < 10) {
@@ -150,7 +157,7 @@ function DebateRoom({ onBack }) {
     if (step === 'intro') {
       const currentP = participants[turn];
       const side = noSide ? "" : (turn % 2 === 0 ? "찬성측 " : "반대측 ");
-      speak(`오늘의 토론 주제는 ${topic}입니다. 주의 사항을 확인하고 준비해 주세요. 첫 번째 발표자 ${side}${currentP.name} 친구부터 시작합니다.!`);
+      speak(`오늘의 토론 주제는 ${topic}입니다. 주의 사항을 확인하고 준비해 주세요. 첫 번째 발표자 ${side}${currentP.name} 친구부터 시작합니다!`);
       timer = setInterval(() => {
         setIntroTimer((prev) => {
           if (prev <= 1) {
@@ -218,7 +225,9 @@ function DebateRoom({ onBack }) {
       }).catch(() => {});
     }
 
-    setDebateTime(timeLeft);  
+    const t = clampTime(timeLeft);
+    setTimeLeft(t);
+    setDebateTime(t);
     setStep('intro');
   };
 
@@ -230,10 +239,54 @@ function DebateRoom({ onBack }) {
 
   // --- 1. 설정 화면 (Input) ---
   if (step === 'input') {
+    const timeValid = timeLeft !== "" && Number(timeLeft) >= MIN_TIME && Number(timeLeft) <= MAX_TIME;
+    const canStart = topic && participants.every(p => p.name.trim() !== "") && timeValid;
     return (
       <div className='min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat'
           style={{ backgroundImage: "url('/bg.png')", backgroundAttachment: 'fixed' }}>
         <div className="fixed inset-0 bg-black/40 pointer-events-none"></div>
+
+        {/* 💾 지난번에 정한 순서 불러오기 안내창 */}
+        {savedData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+            <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6 md:p-8 animate-in fade-in zoom-in duration-300">
+              <h3 className="text-xl md:text-2xl font-black text-slate-800 font-jalnan mb-1">📋 정해둔 순서가 있어요!</h3>
+              <p className="text-slate-500 text-sm md:text-base mb-5">순서 정하기에서 만든 내용을 불러올까요?</p>
+
+              <div className="bg-slate-50 rounded-2xl p-4 mb-6 space-y-3">
+                <div>
+                  <span className="text-xs font-bold text-slate-400">주제</span>
+                  <p className="text-base md:text-lg font-black text-purple-600 break-keep">{savedData.topic}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-slate-400">
+                    발표자 {savedData.results.length}명 · {savedData.noSide ? "찬반 없이" : "찬반 토론"}
+                  </span>
+                  <div className="flex flex-wrap gap-2 mt-1 max-h-40 overflow-y-auto">
+                    {savedData.results.map((p, i) => (
+                      <span key={i} className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-full pl-1 pr-3 py-1 text-sm font-bold text-slate-700">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs ${savedData.noSide ? 'bg-purple-500' : (i % 2 === 0 ? 'bg-blue-500' : 'bg-red-500')}`}>{i + 1}</span>
+                        {p.name}
+                        {!savedData.noSide && (
+                          <span className={`text-[10px] ${i % 2 === 0 ? 'text-blue-600' : 'text-red-600'}`}>{i % 2 === 0 ? '찬성' : '반대'}</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={() => setSavedData(null)} className="flex-1 py-3 md:py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold text-base md:text-lg hover:bg-slate-200 active:scale-95 transition-all">
+                  새로 입력할게요
+                </button>
+                <button onClick={loadSaved} className="flex-1 py-3 md:py-4 bg-blue-600 text-white rounded-2xl font-bold text-base md:text-lg shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all">
+                  불러오기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* 📱 p-6 md:p-10 모바일 여백 조절 */}
         <div className="p-6 md:p-10 z-10 w-full max-w-3xl bg-white/95 backdrop-blur-sm shadow-2xl rounded-3xl relative">
@@ -291,12 +344,15 @@ function DebateRoom({ onBack }) {
             <section className="rounded-2xl"> 
               <div className="flex flex-wrap items-center gap-3">
                 <span className="text-slate-500 font-bold text-base md:text-xl">발표시간</span>
-                <input type="number" className="w-10 md:w-20 p-1 md:p-1 border-2 rounded-lg text-center text-sm md:text-xl font-bold bg-white outline-none border-slate-500 " value={timeLeft} onChange={(e) => setTimeLeft(Number(e.target.value))} />
-                <span className="text-slate-400 font-bold text-sm md:text-lg">초 ({Math.floor(timeLeft / 60)}분 {timeLeft % 60}초)</span>
+                <input type="number" min={MIN_TIME} max={MAX_TIME} step={10} className={`w-14 md:w-20 p-1 md:p-1 border-2 rounded-lg text-center text-sm md:text-xl font-bold bg-white outline-none ${timeValid ? "border-slate-500" : "border-red-500"}`} value={timeLeft} onChange={(e) => setTimeLeft(e.target.value === "" ? "" : Number(e.target.value))} onBlur={() => setTimeLeft(clampTime(timeLeft))} />
+                <span className="text-slate-400 font-bold text-sm md:text-lg">초 ({Math.floor((Number(timeLeft) || 0) / 60)}분 {(Number(timeLeft) || 0) % 60}초)</span>
               </div>
+              {!timeValid && (
+                <p className="mt-2 ml-1 text-red-500 text-xs md:text-sm font-bold">발표시간은 {MIN_TIME}초~{MAX_TIME / 60}분 사이로 입력해 주세요.</p>
+              )}
             </section>
             
-            <button onClick={startDebate} className={`w-full py-4 md:py-5 text-white text-xl md:text-2xl font-bold rounded-2xl shadow-xl transition-all ${topic && participants.every(p => p.name.trim() !== "") ? "bg-blue-600 shadow-blue-200" : "bg-slate-300 cursor-not-allowed"}`} disabled={!topic || participants.some(p => p.name.trim() === "")}>
+            <button onClick={startDebate} className={`w-full py-4 md:py-5 text-white text-xl md:text-2xl font-bold rounded-2xl shadow-xl transition-all ${canStart ? "bg-blue-600 shadow-blue-200" : "bg-slate-300 cursor-not-allowed"}`} disabled={!canStart}>
               토론 시작하기 🚀
             </button>
           </div>

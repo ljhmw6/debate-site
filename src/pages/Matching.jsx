@@ -103,9 +103,12 @@ function Matching({ onBack, onStartDebate }) {
             color: i % 2 === 0 ? "bg-blue-500" : "bg-red-500"
           });
 
-      const shuffledNames = [...names]
-        .filter(n => n.trim() !== "")
-        .sort(() => Math.random() - 0.5);
+      // Fisher-Yates 셔플: 모든 순서가 같은 확률로 나오도록
+      const shuffledNames = names.filter(n => n.trim() !== "");
+      for (let i = shuffledNames.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledNames[i], shuffledNames[j]] = [shuffledNames[j], shuffledNames[i]];
+      }
 
       const finalMatch = shuffledNames.map((name, i) => ({
         name,
